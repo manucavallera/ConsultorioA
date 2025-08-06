@@ -49,7 +49,7 @@ export default function PacienteList({
 
   const fetchPacientes = async () => {
     try {
-      const res = await fetch(`${API_URL}/pacientes`);
+      const res = await fetch("http://localhost:5000/pacientes");
       const data = await res.json();
 
       // ✅ ORDENAR TAMBIÉN LA LISTA INICIAL
@@ -103,7 +103,7 @@ export default function PacienteList({
     if (!confirmar) return;
 
     try {
-      await fetch(`${API_URL}/pacientes/${id}`, {
+      await fetch(`http://localhost:5000/pacientes/${id}`, {
         method: "DELETE",
       });
       setPacientes((prev) => prev.filter((paciente) => paciente._id !== id));

@@ -82,7 +82,7 @@ const FotosAntesDepues = () => {
     formData.append("descripcion", descripcion);
 
     try {
-      const res = await fetch(`${API_URL}/fotos`, {
+      const res = await fetch("http://localhost:5000/fotos", {
         method: "POST",
         body: formData,
       });
@@ -113,7 +113,7 @@ const FotosAntesDepues = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/fotos/${fotoId}`, {
+      const res = await fetch(`http://localhost:5000/fotos/${fotoId}`, {
         method: "DELETE",
       });
 

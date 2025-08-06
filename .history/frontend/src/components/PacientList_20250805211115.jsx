@@ -103,7 +103,7 @@ export default function PacienteList({
     if (!confirmar) return;
 
     try {
-      await fetch(`${API_URL}/pacientes/${id}`, {
+      await fetch(`http://localhost:5000/pacientes/${id}`, {
         method: "DELETE",
       });
       setPacientes((prev) => prev.filter((paciente) => paciente._id !== id));

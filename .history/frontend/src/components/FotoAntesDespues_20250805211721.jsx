@@ -28,7 +28,9 @@ const FotosAntesDepues = () => {
     setCargando(true);
     try {
       // Cargar comparación (principal)
-      const compRes = await fetch(`${API_URL}/fotos/comparacion/${pacienteId}`);
+      const compRes = await fetch(
+        `http://localhost:5000/fotos/comparacion/${pacienteId}`
+      );
 
       if (compRes.ok) {
         const compData = await compRes.json();
@@ -49,7 +51,7 @@ const FotosAntesDepues = () => {
       // 🔧 INTENTAR cargar estadísticas (opcional)
       try {
         const statsRes = await fetch(
-          `${API_URL}/fotos/estadisticas/${pacienteId}`
+          `http://localhost:5000/fotos/estadisticas/${pacienteId}`
         );
         if (statsRes.ok) {
           const statsData = await statsRes.json();
@@ -82,7 +84,7 @@ const FotosAntesDepues = () => {
     formData.append("descripcion", descripcion);
 
     try {
-      const res = await fetch(`${API_URL}/fotos`, {
+      const res = await fetch("http://localhost:5000/fotos", {
         method: "POST",
         body: formData,
       });
@@ -113,7 +115,7 @@ const FotosAntesDepues = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/fotos/${fotoId}`, {
+      const res = await fetch(`http://localhost:5000/fotos/${fotoId}`, {
         method: "DELETE",
       });
 

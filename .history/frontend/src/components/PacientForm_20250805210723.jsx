@@ -20,8 +20,6 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // Para el stepper en móvil
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
   useEffect(() => {
     if (pacienteEditando) {
       setFormData({

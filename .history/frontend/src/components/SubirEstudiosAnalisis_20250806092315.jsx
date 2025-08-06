@@ -118,7 +118,7 @@ const SubirEstudioAnalisis = (props) => {
     try {
       // ✅ CORREGIDO: Sin /api/ para coincidir con tu servidor
       const response = await fetch(
-        `${API_URL}/estudios/solicitud/${solicitudId}`
+        `http://localhost:5000/estudios/solicitud/${solicitudId}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -151,7 +151,7 @@ const SubirEstudioAnalisis = (props) => {
     try {
       console.log("Subiendo archivo..."); // ✅ DEBUG
       // ✅ CORREGIDO: Sin /api/ para coincidir con tu servidor
-      const res = await fetch(`${API_URL}/estudios`, {
+      const res = await fetch("http://localhost:5000/estudios", {
         method: "POST",
         body: formData,
       });

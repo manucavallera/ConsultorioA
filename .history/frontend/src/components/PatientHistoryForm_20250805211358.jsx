@@ -21,7 +21,6 @@ const PatientHistoryForm = () => {
     (async () => {
       try {
         const res = await fetch(`${API_URL}/historial/${pacienteId}`);
-
         if (!res.ok) throw new Error("Error al cargar el historial clínico.");
         setHistorial(await res.json());
       } catch (err) {
@@ -34,7 +33,7 @@ const PatientHistoryForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const url = `${API_URL}/historial/${isEditing ? editId : ""}`;
+    const url = `http://localhost:5000/historial/${isEditing ? editId : ""}`;
     const method = isEditing ? "PUT" : "POST";
 
     try {
@@ -71,7 +70,7 @@ const PatientHistoryForm = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Estás seguro de eliminar este registro?")) return;
     try {
-      const res = await fetch(`${API_URL}/historial/${id}`, {
+      const res = await fetch(`http://localhost:5000/historial/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar el historial clínico.");
