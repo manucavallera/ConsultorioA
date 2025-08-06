@@ -106,5 +106,4 @@ app.use((err, req, res, next) => {
         : "Something went wrong",
   });
 });
-
 export default app;

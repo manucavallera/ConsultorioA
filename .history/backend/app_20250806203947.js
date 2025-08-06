@@ -78,16 +78,15 @@ app.get("/health", (req, res) => {
 
 // Rutas principales - COMENTAR TODAS PARA ENCONTRAR EL ERROR
 app.use("/pacientes", pacienteRoutes);
-app.use("/historial", historialClinicoRoutes);
-app.use("/citas", citaRoutes);
-app.use("/estudios", estudioLaboratorioRoutes);
-app.use("/tratamientos", registroTratamientoRoutes);
-app.use("/solicitudes", solicitudAnalisisRoutes);
-app.use("/fotos", fotoAntesDepuesRoutes);
+// app.use("/historial", historialClinicoRoutes);
+// app.use("/citas", citaRoutes);
+// app.use("/estudios", estudioLaboratorioRoutes);
+// app.use("/tratamientos", registroTratamientoRoutes);
+// app.use("/solicitudes", solicitudAnalisisRoutes);
+// app.use("/fotos", fotoAntesDepuesRoutes);
 
-// ✅ MIDDLEWARE DE ERROR 404 - CORREGIDO
-app.use((req, res) => {
-  // ← QUITAR EL "*"
+// ✅ MIDDLEWARE DE ERROR 404
+app.use("*", (req, res) => {
   res.status(404).json({
     error: "Ruta no encontrada",
     path: req.originalUrl,

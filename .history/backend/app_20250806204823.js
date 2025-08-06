@@ -85,9 +85,8 @@ app.use("/tratamientos", registroTratamientoRoutes);
 app.use("/solicitudes", solicitudAnalisisRoutes);
 app.use("/fotos", fotoAntesDepuesRoutes);
 
-// ✅ MIDDLEWARE DE ERROR 404 - CORREGIDO
-app.use((req, res) => {
-  // ← QUITAR EL "*"
+// ✅ MIDDLEWARE DE ERROR 404
+app.use("*", (req, res) => {
   res.status(404).json({
     error: "Ruta no encontrada",
     path: req.originalUrl,
