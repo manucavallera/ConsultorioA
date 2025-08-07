@@ -297,16 +297,12 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                     placeholder='Describe antecedentes médicos...'
                     label='Antecedentes de Enfermedad'
                     rows={4}
-                    value={formData.antecedentesEnfermedad}
-                    onChange={handleChange}
                   />
                   <TextAreaField
                     name='antecedentesFamiliares'
                     placeholder='Describe antecedentes familiares...'
                     label='Antecedentes Familiares'
                     rows={4}
-                    value={formData.antecedentesFamiliares}
-                    onChange={handleChange}
                   />
                 </div>
                 <InputField

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react"; // ← AGREGAR useCallback
 
 import InputField from "./InputField";
-import TextAreaField from "./TextAreaField";
 
 export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
   const [formData, setFormData] = useState({
@@ -94,6 +93,25 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
       setIsSubmitting(false);
     }
   };
+
+  const TextAreaField = ({ name, placeholder, label, rows = 3 }) => (
+    <div>
+      <label className='block text-sm sm:text-base font-medium text-gray-700 mb-2'>
+        {label}
+      </label>
+      <textarea
+        name={name}
+        placeholder={placeholder}
+        value={formData[name] || ""}
+        onChange={handleChange}
+        rows={rows}
+        className='w-full px-3 sm:px-4 py-3 sm:py-4 border border-gray-200 rounded-xl 
+          focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
+          bg-white hover:border-gray-300 placeholder-gray-400 text-gray-700
+          shadow-sm hover:shadow-md resize-none text-sm sm:text-base'
+      />
+    </div>
+  );
 
   const SectionHeader = ({ icon, title, bgColor, textColor }) => (
     <h3 className='text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center'>
@@ -260,14 +278,9 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
               />
 
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-                <InputField
-                  name='telefono'
-                  placeholder='Teléfono'
-                  icon='📱'
-                  value={formData.telefono}
-                  onChange={handleChange}
-                />
-
+                <InputField name='telefono' placeholder='Teléfono' icon='📱' />
+                value={formData.telefono}
+                onChange={handleChange}
                 <InputField
                   name='email'
                   placeholder='Email'
@@ -297,24 +310,18 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                     placeholder='Describe antecedentes médicos...'
                     label='Antecedentes de Enfermedad'
                     rows={4}
-                    value={formData.antecedentesEnfermedad}
-                    onChange={handleChange}
                   />
                   <TextAreaField
                     name='antecedentesFamiliares'
                     placeholder='Describe antecedentes familiares...'
                     label='Antecedentes Familiares'
                     rows={4}
-                    value={formData.antecedentesFamiliares}
-                    onChange={handleChange}
                   />
                 </div>
                 <InputField
                   name='alergias'
                   placeholder='Alergias conocidas'
                   icon='⚠️'
-                  value={formData.alergias}
-                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -338,22 +345,16 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   min='0'
                   max='24'
                   icon='😴'
-                  value={formData.horasSueno}
-                  onChange={handleChange}
                 />
                 <InputField
                   name='obraSocial'
                   placeholder='Obra Social'
                   icon='🏥'
-                  value={formData.obraSocial}
-                  onChange={handleChange}
                 />
                 <InputField
                   name='tipoShampoo'
                   placeholder='Tipo de Shampoo'
                   icon='🧴'
-                  value={formData.tipoShampoo}
-                  onChange={handleChange}
                 />
               </div>
             </div>

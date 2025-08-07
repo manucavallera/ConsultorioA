@@ -305,7 +305,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                     placeholder='Describe antecedentes familiares...'
                     label='Antecedentes Familiares'
                     rows={4}
-                    value={formData.antecedentesFamiliares}
+                    value={formData.antecedentesFamiliares} // ← AGREGAR
                     onChange={handleChange}
                   />
                 </div>
