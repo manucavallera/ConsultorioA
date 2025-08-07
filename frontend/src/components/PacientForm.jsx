@@ -1,6 +1,8 @@
-import { useState, useEffect, memo } from "react"; // ← AGREGAR memo
+import { useState, useEffect, useCallback } from "react"; // ← AGREGAR useCallback
 
-function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
+import InputField from "./InputField";
+
+export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -20,18 +22,10 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // 🔍 DEBUG - AGREGAR ESTO PARA DETECTAR RE-RENDERS
-  console.log(
-    "🔄 PacienteForm render - pacienteEditando:",
-    pacienteEditando?._id
-  );
-  console.log("🔄 PacienteForm render - formData nombre:", formData.nombre);
-
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (pacienteEditando) {
-      console.log("📝 Actualizando formData por pacienteEditando");
       setFormData({
         nombre: pacienteEditando.nombre || "",
         apellido: pacienteEditando.apellido || "",
@@ -50,12 +44,11 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     }
   }, [pacienteEditando]);
 
-  // 🔍 DEBUG - AGREGAR LOGGING AL HANDLECHANGE
-  const handleChange = (e) => {
+  // ✅ FIX DEFINITIVO: Memoizar handleChange
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    console.log("✏️ Input change:", name, "=", value);
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []); // ← Sin dependencias porque usa función updater
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,39 +94,6 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     }
   };
 
-  const InputField = ({
-    name,
-    placeholder,
-    type = "text",
-    required = false,
-    icon,
-    min,
-    className = "",
-  }) => (
-    <div className={`relative ${className}`}>
-      {icon && (
-        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10'>
-          <span className='text-gray-400 text-sm sm:text-base'>{icon}</span>
-        </div>
-      )}
-      <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        value={formData[name] || ""} // Asegurar string controlado
-        onChange={handleChange}
-        required={required}
-        min={min}
-        className={`w-full ${
-          icon ? "pl-10 sm:pl-12" : "pl-3 sm:pl-4"
-        } pr-3 sm:pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl 
-          focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
-          bg-white hover:border-gray-300 placeholder-gray-400 text-gray-700
-          shadow-sm hover:shadow-md text-sm sm:text-base`}
-      />
-    </div>
-  );
-
   const TextAreaField = ({ name, placeholder, label, rows = 3 }) => (
     <div>
       <label className='block text-sm sm:text-base font-medium text-gray-700 mb-2'>
@@ -142,7 +102,7 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
       <textarea
         name={name}
         placeholder={placeholder}
-        value={formData[name] || ""} // Asegurar string controlado
+        value={formData[name] || ""}
         onChange={handleChange}
         rows={rows}
         className='w-full px-3 sm:px-4 py-3 sm:py-4 border border-gray-200 rounded-xl 
@@ -264,6 +224,8 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   required
                   icon='👤'
                   className='sm:col-span-1'
+                  value={formData.nombre}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='apellido'
@@ -271,6 +233,8 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   required
                   icon='👤'
                   className='sm:col-span-1'
+                  value={formData.apellido}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='dni'
@@ -278,6 +242,8 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   required
                   icon='🆔'
                   className='sm:col-span-1 lg:col-span-1'
+                  value={formData.dni}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='edad'
@@ -286,12 +252,16 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   min='0'
                   icon='📅'
                   className='sm:col-span-1'
+                  value={formData.edad}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='genero'
                   placeholder='Género'
                   icon='⚧'
                   className='sm:col-span-1'
+                  value={formData.genero}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -308,12 +278,21 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
               />
 
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-                <InputField name='telefono' placeholder='Teléfono' icon='📱' />
+                <InputField
+                  name='telefono'
+                  placeholder='Teléfono'
+                  icon='📱'
+                  value={formData.telefono}
+                  onChange={handleChange}
+                />
+
                 <InputField
                   name='email'
                   placeholder='Email'
                   type='email'
                   icon='✉️'
+                  value={formData.email}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -348,6 +327,8 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   name='alergias'
                   placeholder='Alergias conocidas'
                   icon='⚠️'
+                  value={formData.alergias}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -371,16 +352,22 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   min='0'
                   max='24'
                   icon='😴'
+                  value={formData.horasSueno}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='obraSocial'
                   placeholder='Obra Social'
                   icon='🏥'
+                  value={formData.obraSocial}
+                  onChange={handleChange}
                 />
                 <InputField
                   name='tipoShampoo'
                   placeholder='Tipo de Shampoo'
                   icon='🧴'
+                  value={formData.tipoShampoo}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -435,6 +422,3 @@ function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     </div>
   );
 }
-
-// ✅ EXPORTAR CON MEMO PARA EVITAR RE-RENDERS INNECESARIOS
-export default memo(PacienteForm);

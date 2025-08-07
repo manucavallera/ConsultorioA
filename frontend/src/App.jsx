@@ -42,7 +42,6 @@ function App() {
             <div style={{ padding: "2rem" }}>
               <h2>Gestión de Pacientes</h2>
               <PacienteForm
-                key={pacienteEditando?._id || "new-paciente"} // ✅ FIX: Key dinámico estable
                 onPacienteSubmit={handlePacienteSubmit}
                 pacienteEditando={pacienteEditando}
               />
@@ -50,7 +49,7 @@ function App() {
               <PacienteList
                 pacientes={pacientes}
                 setPacientes={setPacientes}
-                onEditPaciente={handleEditPaciente} // ✅ FIX: Función estable
+                onEditPaciente={handleEditPaciente}
               />
             </div>
           }
