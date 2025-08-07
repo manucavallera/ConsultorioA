@@ -9,7 +9,7 @@ export default function PacienteList({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [vistaTabla, setVistaTabla] = useState(true);
-
+  
   // ✅ FIX: Referencias para evitar fetch múltiple
   const hasFetched = useRef(false);
   const lastFetchTime = useRef(0);
@@ -19,17 +19,17 @@ export default function PacienteList({
   // ✅ FIX: Memoizar fetchPacientes
   const fetchPacientes = useCallback(async () => {
     const now = Date.now();
-
+    
     // Evitar fetch si es muy reciente (menos de 2 segundos)
     if (now - lastFetchTime.current < 2000) {
       console.log("⏭️ Skip fetch - muy reciente");
       return;
     }
-
+    
     try {
       console.log("🌐 Fetching pacientes...");
       lastFetchTime.current = now;
-
+      
       const res = await fetch(`${API_URL}/pacientes`);
       const data = await res.json();
 
@@ -686,6 +686,5 @@ export default function PacienteList({
           </>
         )}
       </div>
-    </div>
-  );
-}
+       </div>
+ </div>
