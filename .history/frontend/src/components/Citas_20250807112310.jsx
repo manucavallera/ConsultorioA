@@ -1878,12 +1878,9 @@ const CitaFormModal = ({
 
 // Componente Calendario - RESPONSIVE
 // Componente Calendario - RESPONSIVE - MEJORADO PARA MOSTRAR TODAS LAS CITAS
-// Componente Calendario - TOTALMENTE RESPONSIVE - MEJORADO PARA MOSTRAR TODAS LAS CITAS
 const CalendarioCitas = ({ citas, onEditarCita }) => {
   const [fechaActual, setFechaActual] = useState(new Date());
-  const [modalCitasAbierto, setModalCitasAbierto] = useState(false);
-  const [citasDelDiaSeleccionado, setCitasDelDiaSeleccionado] = useState([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  const [diaExpandido, setDiaExpandido] = useState(null);
 
   const obtenerDiasDelMes = (fecha) => {
     const año = fecha.getFullYear();
@@ -1921,23 +1918,22 @@ const CalendarioCitas = ({ citas, onEditarCita }) => {
         const fechaBuscadaStr = fecha.toISOString().split("T")[0];
         return fechaCitaStr === fechaBuscadaStr;
       })
-      .sort((a, b) => a.hora.localeCompare(b.hora));
+      .sort((a, b) => a.hora.localeCompare(b.hora)); // Ordenar por hora
   };
 
   const navegarMes = (direccion) => {
     const nuevaFecha = new Date(fechaActual);
     nuevaFecha.setMonth(fechaActual.getMonth() + direccion);
     setFechaActual(nuevaFecha);
+    setDiaExpandido(null); // Cerrar cualquier día expandido al cambiar de mes
   };
 
-  const abrirModalCitas = (fecha, citas) => {
-    setCitasDelDiaSeleccionado(citas);
-    setFechaSeleccionada(fecha);
-    setModalCitasAbierto(true);
+  const toggleDiaExpandido = (fecha) => {
+    const fechaStr = fecha.toISOString().split("T")[0];
+    setDiaExpandido(diaExpandido === fechaStr ? null : fechaStr);
   };
 
-  const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-  const diasSemanaCompletos = [
+  const diasSemana = [
     "Domingo",
     "Lunes",
     "Martes",
@@ -1964,416 +1960,266 @@ const CalendarioCitas = ({ citas, onEditarCita }) => {
   const diasDelMes = obtenerDiasDelMes(fechaActual);
 
   return (
-    <>
-      <div className='bg-white/80 backdrop-blur-lg rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-xl border border-white/20 overflow-hidden'>
-        {/* Header del calendario */}
-        <div className='bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 sm:p-4 lg:p-6'>
-          <div className='flex items-center justify-between'>
-            <button
-              onClick={() => navegarMes(-1)}
-              className='p-2 sm:p-3 hover:bg-white/20 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base'
-            >
-              <span className='text-lg sm:text-xl'>←</span>
-              <span className='hidden sm:inline'>Anterior</span>
-            </button>
+    <div className='bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 overflow-hidden'>
+      <div className='bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-8'>
+        <div className='flex items-center justify-between'>
+          <button
+            onClick={() => navegarMes(-1)}
+            className='p-2 sm:p-3 hover:bg-white/20 rounded-xl sm:rounded-2xl transition-all duration-200 flex items-center space-x-2 font-medium'
+          >
+            <span>←</span>
+            <span className='hidden sm:inline'>Anterior</span>
+          </button>
 
-            <div className='text-center flex-1'>
-              <h2 className='text-lg sm:text-2xl lg:text-3xl font-bold'>
-                {meses[fechaActual.getMonth()]} {fechaActual.getFullYear()}
-              </h2>
-              <p className='text-blue-100 mt-1 text-xs sm:text-sm lg:text-base hidden sm:block'>
-                Calendario de citas médicas
-              </p>
-            </div>
-
-            <button
-              onClick={() => navegarMes(1)}
-              className='p-2 sm:p-3 hover:bg-white/20 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base'
-            >
-              <span className='hidden sm:inline'>Siguiente</span>
-              <span className='text-lg sm:text-xl'>→</span>
-            </button>
+          <div className='text-center'>
+            <h2 className='text-2xl sm:text-3xl font-bold'>
+              {meses[fechaActual.getMonth()]} {fechaActual.getFullYear()}
+            </h2>
+            <p className='text-blue-100 mt-1 text-sm sm:text-base'>
+              Calendario de citas médicas - Click en un día para ver todas las
+              citas
+            </p>
           </div>
-        </div>
 
-        {/* Días de la semana */}
-        <div className='grid grid-cols-7 border-b border-gray-200 bg-gray-50'>
-          {diasSemana.map((dia, index) => (
-            <div
-              key={dia}
-              className='p-2 sm:p-3 lg:p-4 text-center font-bold text-gray-700 border-r border-gray-200 last:border-r-0 text-xs sm:text-sm lg:text-base'
-            >
-              <span className='sm:hidden'>{dia}</span>
-              <span className='hidden sm:inline lg:hidden'>
-                {diasSemanaCompletos[index].slice(0, 4)}
-              </span>
-              <span className='hidden lg:inline'>
-                {diasSemanaCompletos[index]}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Cuadrícula del calendario */}
-        <div className='grid grid-cols-7 gap-0'>
-          {diasDelMes.map((diaInfo, index) => {
-            const citasDelDiaActual = citasDelDia(diaInfo.fecha);
-            const esHoy =
-              diaInfo.fecha.toISOString().split("T")[0] === obtenerFechaHoy();
-
-            return (
-              <div
-                key={index}
-                className={`
-                  h-16 sm:h-20 lg:h-28 xl:h-32 p-1 sm:p-2 lg:p-3 border-r border-b border-gray-100 last:border-r-0 
-                  transition-all duration-200 hover:bg-gray-50 cursor-pointer
-                  ${diaInfo.esDelMesActual ? "bg-white" : "bg-gray-50"}
-                  ${
-                    esHoy
-                      ? "bg-blue-50 border-blue-200 ring-1 ring-blue-200"
-                      : ""
-                  }
-                  ${citasDelDiaActual.length > 0 ? "hover:shadow-md" : ""}
-                `}
-                onClick={() =>
-                  citasDelDiaActual.length > 0 &&
-                  abrirModalCitas(diaInfo.fecha, citasDelDiaActual)
-                }
-              >
-                {/* Número del día */}
-                <div className='flex items-center justify-between mb-1'>
-                  <div
-                    className={`
-                      text-xs sm:text-sm lg:text-base font-bold
-                      ${
-                        diaInfo.esDelMesActual
-                          ? "text-gray-900"
-                          : "text-gray-400"
-                      }
-                      ${
-                        esHoy
-                          ? "bg-blue-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex items-center justify-center text-xs sm:text-sm"
-                          : ""
-                      }
-                    `}
-                  >
-                    {diaInfo.fecha.getDate()}
-                  </div>
-
-                  {/* Indicador de cantidad de citas */}
-                  {citasDelDiaActual.length > 0 && (
-                    <div
-                      className={`
-                        text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full min-w-0 flex items-center justify-center
-                        ${
-                          citasDelDiaActual.length >= 4
-                            ? "bg-red-100 text-red-700"
-                            : citasDelDiaActual.length >= 2
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-green-100 text-green-700"
-                        }
-                      `}
-                    >
-                      {citasDelDiaActual.length}
-                    </div>
-                  )}
-                </div>
-
-                {/* Citas del día - Responsive */}
-                <div className='space-y-0.5 sm:space-y-1 overflow-hidden'>
-                  {/* Móvil: Solo puntos de colores */}
-                  <div className='sm:hidden flex flex-wrap gap-0.5'>
-                    {citasDelDiaActual.slice(0, 6).map((cita, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-2 h-2 rounded-full ${
-                          cita.estado === "Completada"
-                            ? "bg-green-500"
-                            : cita.estado === "En curso"
-                            ? "bg-yellow-500"
-                            : "bg-blue-500"
-                        }`}
-                        title={`${cita.hora} - ${cita.pacienteId.nombre}`}
-                      />
-                    ))}
-                    {citasDelDiaActual.length > 6 && (
-                      <div className='text-xs text-gray-500 ml-1'>
-                        +{citasDelDiaActual.length - 6}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tablet y Desktop: Barras de citas */}
-                  <div className='hidden sm:block space-y-0.5'>
-                    {citasDelDiaActual.slice(0, 3).map((cita) => (
-                      <div
-                        key={cita._id}
-                        className={`
-                          text-xs px-1 py-0.5 lg:px-2 lg:py-1 rounded truncate text-white font-medium
-                          ${
-                            cita.estado === "Completada"
-                              ? "bg-green-500"
-                              : cita.estado === "En curso"
-                              ? "bg-yellow-500"
-                              : "bg-blue-500"
-                          }
-                        `}
-                        title={`${cita.hora} - ${cita.pacienteId.nombre} ${cita.pacienteId.apellido} - ${cita.tipoConsulta}`}
-                      >
-                        <span className='text-xs lg:text-sm'>{cita.hora}</span>
-                        <span className='hidden lg:inline ml-1'>
-                          {cita.pacienteId.nombre}
-                        </span>
-                      </div>
-                    ))}
-
-                    {citasDelDiaActual.length > 3 && (
-                      <div className='text-xs text-blue-600 font-medium text-center bg-blue-50 rounded px-1 py-0.5'>
-                        +{citasDelDiaActual.length - 3} más
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Leyenda responsive */}
-        <div className='p-2 sm:p-4 bg-gray-50 border-t border-gray-200'>
-          <div className='flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm'>
-            <div className='flex items-center space-x-1 sm:space-x-2'>
-              <div className='w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full'></div>
-              <span>Completada</span>
-            </div>
-            <div className='flex items-center space-x-1 sm:space-x-2'>
-              <div className='w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full'></div>
-              <span>En curso</span>
-            </div>
-            <div className='flex items-center space-x-1 sm:space-x-2'>
-              <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full'></div>
-              <span>Programada</span>
-            </div>
-            <div className='flex items-center space-x-1 sm:space-x-2'>
-              <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-600 rounded-full'></div>
-              <span>Hoy</span>
-            </div>
-          </div>
-          <p className='text-center text-xs text-gray-500 mt-1 sm:mt-2'>
-            💡 Click en días con citas para ver detalles
-          </p>
+          <button
+            onClick={() => navegarMes(1)}
+            className='p-2 sm:p-3 hover:bg-white/20 rounded-xl sm:rounded-2xl transition-all duration-200 flex items-center space-x-2 font-medium'
+          >
+            <span className='hidden sm:inline'>Siguiente</span>
+            <span>→</span>
+          </button>
         </div>
       </div>
 
-      {/* Modal con todas las citas del día */}
-      {modalCitasAbierto && (
-        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4'>
-          <div className='bg-white w-full sm:max-w-2xl lg:max-w-4xl sm:rounded-2xl lg:rounded-3xl shadow-2xl max-h-full sm:max-h-[90vh] overflow-hidden'>
-            {/* Header del modal */}
-            <div className='bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <h3 className='text-xl sm:text-2xl lg:text-3xl font-bold'>
-                    Citas del día
-                  </h3>
-                  <p className='text-blue-100 mt-1 text-sm sm:text-base'>
-                    {formatearFecha(fechaSeleccionada?.toISOString())} -{" "}
-                    {citasDelDiaSeleccionado.length} cita
-                    {citasDelDiaSeleccionado.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setModalCitasAbierto(false)}
-                  className='text-white hover:bg-white/20 rounded-xl p-2 sm:p-3 transition-all duration-200 text-xl sm:text-2xl'
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
+      <div className='grid grid-cols-7 border-b-2 border-gray-200 bg-gray-50'>
+        {diasSemana.map((dia) => (
+          <div
+            key={dia}
+            className='p-2 sm:p-4 text-center font-bold text-gray-700 border-r border-gray-200 last:border-r-0 text-xs sm:text-base'
+          >
+            <span className='hidden sm:inline'>{dia}</span>
+            <span className='sm:hidden'>{dia.slice(0, 3)}</span>
+          </div>
+        ))}
+      </div>
 
-            {/* Lista de citas */}
-            <div className='p-4 sm:p-6 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto'>
-              <div className='space-y-3 sm:space-y-4'>
-                {citasDelDiaSeleccionado.map((cita) => (
-                  <div
-                    key={cita._id}
-                    className={`
-                      p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border-l-4 hover:shadow-lg transition-all cursor-pointer
-                      ${
-                        cita.estado === "Completada"
-                          ? "border-green-500 bg-green-50"
-                          : cita.estado === "En curso"
-                          ? "border-yellow-500 bg-yellow-50"
-                          : "border-blue-500 bg-blue-50"
-                      }
-                    `}
-                    onClick={() => {
-                      onEditarCita(cita);
-                      setModalCitasAbierto(false);
-                    }}
-                  >
-                    {/* Header de la cita */}
-                    <div className='flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2'>
-                      <div className='flex items-center space-x-2 sm:space-x-3'>
-                        <div className='bg-white rounded-lg p-2 sm:p-3 shadow-sm'>
-                          <span className='text-lg sm:text-xl'>
+      <div className='grid grid-cols-7'>
+        {diasDelMes.map((diaInfo, index) => {
+          const citasDelDiaActual = citasDelDia(diaInfo.fecha);
+          const esHoy =
+            diaInfo.fecha.toISOString().split("T")[0] === obtenerFechaHoy();
+          const fechaStr = diaInfo.fecha.toISOString().split("T")[0];
+          const estaExpandido = diaExpandido === fechaStr;
+
+          return (
+            <div
+              key={index}
+              className={`relative ${estaExpandido ? "z-10" : ""}`}
+            >
+              <div
+                className={`min-h-20 sm:min-h-32 p-1 sm:p-3 border-r border-b border-gray-100 last:border-r-0 transition-all duration-200 cursor-pointer ${
+                  diaInfo.esDelMesActual
+                    ? "bg-white hover:bg-gray-50"
+                    : "bg-gray-50"
+                } ${esHoy ? "bg-blue-50 border-blue-200" : ""} ${
+                  estaExpandido ? "bg-blue-100 border-blue-300 shadow-lg" : ""
+                }`}
+                onClick={() =>
+                  citasDelDiaActual.length > 0 &&
+                  toggleDiaExpandido(diaInfo.fecha)
+                }
+              >
+                <div
+                  className={`text-xs sm:text-sm font-bold mb-1 sm:mb-2 ${
+                    diaInfo.esDelMesActual ? "text-gray-900" : "text-gray-400"
+                  } ${
+                    esHoy
+                      ? "text-blue-600 bg-blue-100 rounded-full w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm"
+                      : ""
+                  }`}
+                >
+                  {diaInfo.fecha.getDate()}
+                </div>
+
+                {/* Indicador de cantidad de citas */}
+                {citasDelDiaActual.length > 0 && (
+                  <div className='mb-2'>
+                    <div
+                      className={`text-center text-xs font-bold px-2 py-1 rounded-full ${
+                        citasDelDiaActual.length > 3
+                          ? "bg-red-100 text-red-700"
+                          : citasDelDiaActual.length > 1
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {citasDelDiaActual.length} cita
+                      {citasDelDiaActual.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                )}
+
+                {/* Vista compacta de citas (solo las primeras 2-3) */}
+                <div className='space-y-1'>
+                  {citasDelDiaActual
+                    .slice(0, window.innerWidth < 640 ? 2 : 3)
+                    .map((cita) => (
+                      <button
+                        key={cita._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditarCita(cita);
+                        }}
+                        className={`w-full text-left text-xs p-1 sm:p-2 rounded-lg transition-all hover:scale-105 shadow-sm ${obtenerColorEstado(
+                          cita.estado
+                        )}`}
+                      >
+                        <div className='flex items-center space-x-1'>
+                          <span className='text-xs sm:text-sm'>
                             {obtenerIconoTipo(cita.tipoConsulta)}
                           </span>
+                          <div className='truncate flex-1'>
+                            <div className='font-semibold text-xs'>
+                              {cita.hora}
+                            </div>
+                            <div className='truncate text-xs'>
+                              {cita.pacienteId.nombre}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className='text-lg sm:text-xl font-bold text-gray-900'>
-                            {cita.pacienteId.nombre} {cita.pacienteId.apellido}
-                          </h4>
-                          <p className='text-sm sm:text-base text-gray-600'>
-                            {cita.tipoConsulta}
-                          </p>
-                        </div>
-                      </div>
+                      </button>
+                    ))}
 
-                      <div className='flex flex-col sm:flex-row items-start sm:items-center gap-2'>
-                        <div className='bg-white rounded-lg px-3 py-2 shadow-sm'>
-                          <span className='text-lg sm:text-xl font-bold text-gray-900'>
-                            {cita.hora}
-                          </span>
-                        </div>
-                        <span
-                          className={`
-                            px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold
-                            ${
+                  {citasDelDiaActual.length >
+                    (window.innerWidth < 640 ? 2 : 3) && (
+                    <div className='text-xs text-blue-600 text-center bg-blue-50 rounded-lg p-1 font-medium cursor-pointer hover:bg-blue-100'>
+                      +
+                      {citasDelDiaActual.length -
+                        (window.innerWidth < 640 ? 2 : 3)}{" "}
+                      más - Click para ver
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Panel expandido con todas las citas */}
+              {estaExpandido && citasDelDiaActual.length > 0 && (
+                <div className='absolute top-full left-0 right-0 bg-white border-2 border-blue-300 rounded-b-xl shadow-2xl z-20 max-h-80 overflow-y-auto'>
+                  <div className='p-3 bg-blue-50 border-b border-blue-200'>
+                    <div className='flex items-center justify-between'>
+                      <h4 className='font-bold text-gray-900 text-sm'>
+                        {formatearFecha(diaInfo.fecha.toISOString())} -{" "}
+                        {citasDelDiaActual.length} cita
+                        {citasDelDiaActual.length !== 1 ? "s" : ""}
+                      </h4>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDiaExpandido(null);
+                        }}
+                        className='text-blue-600 hover:text-blue-800 font-bold'
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <div className='p-3 space-y-2 max-h-64 overflow-y-auto'>
+                    {citasDelDiaActual.map((cita) => (
+                      <div
+                        key={cita._id}
+                        className={`p-3 rounded-lg border-l-4 hover:shadow-md transition-all cursor-pointer ${obtenerColorEstado(
+                          cita.estado
+                        )}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditarCita(cita);
+                        }}
+                      >
+                        <div className='flex items-center justify-between mb-2'>
+                          <div className='flex items-center space-x-2'>
+                            <span className='text-lg'>
+                              {obtenerIconoTipo(cita.tipoConsulta)}
+                            </span>
+                            <span className='font-bold text-sm'>
+                              {cita.hora}
+                            </span>
+                          </div>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
                               cita.estado === "Completada"
                                 ? "bg-green-100 text-green-700"
                                 : cita.estado === "En curso"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : "bg-blue-100 text-blue-700"
-                            }
-                          `}
-                        >
-                          {cita.estado}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Detalles de la cita */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3'>
-                      <div className='bg-white rounded-lg p-2 sm:p-3 shadow-sm'>
-                        <p className='text-xs text-gray-500 mb-1'>Duración</p>
-                        <p className='font-semibold text-sm sm:text-base'>
-                          {cita.duracion || 60} minutos
-                        </p>
-                      </div>
-
-                      {cita.motivo && (
-                        <div className='bg-white rounded-lg p-2 sm:p-3 shadow-sm sm:col-span-2 lg:col-span-2'>
-                          <p className='text-xs text-gray-500 mb-1'>Motivo</p>
-                          <p className='font-semibold text-sm sm:text-base line-clamp-2'>
-                            {cita.motivo}
+                            }`}
+                          >
+                            {cita.estado}
+                          </span>
+                        </div>
+                        <div className='text-sm'>
+                          <p className='font-semibold text-gray-900'>
+                            {cita.pacienteId.nombre} {cita.pacienteId.apellido}
                           </p>
+                          <p className='text-gray-600 text-xs'>
+                            {cita.tipoConsulta} • {cita.duracion || 60} min
+                          </p>
+                          {cita.motivo && (
+                            <p className='text-gray-500 text-xs mt-1 truncate'>
+                              {cita.motivo}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Información de pagos */}
-                    {cita.pago?.pagos && (
-                      <div className='bg-white rounded-lg p-2 sm:p-3 shadow-sm mb-3'>
-                        <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2'>
-                          <div className='flex items-center space-x-2'>
-                            <span className='text-sm sm:text-base'>💳</span>
-                            <span className='font-semibold text-sm sm:text-base text-gray-800'>
-                              Plan de Pagos
-                            </span>
+                        <div className='mt-2 flex items-center justify-between'>
+                          <div className='text-xs text-gray-500'>
+                            Click para editar
                           </div>
-
-                          <div className='grid grid-cols-3 gap-2 sm:gap-4 text-center'>
-                            <div className='bg-gray-50 rounded px-2 py-1'>
-                              <p className='text-xs text-gray-500'>Total</p>
-                              <p className='text-sm font-bold'>
-                                {cita.pago.pagos.length}
-                              </p>
+                          {cita.pago?.pagos && (
+                            <div className='text-xs'>
+                              💳{" "}
+                              {
+                                cita.pago.pagos.filter(
+                                  (p) => p.estado === "pendiente"
+                                ).length
+                              }{" "}
+                              pendientes
                             </div>
-                            <div className='bg-green-50 rounded px-2 py-1'>
-                              <p className='text-xs text-gray-500'>Pagados</p>
-                              <p className='text-sm font-bold text-green-600'>
-                                {
-                                  cita.pago.pagos.filter(
-                                    (p) => p.estado === "pagado"
-                                  ).length
-                                }
-                              </p>
-                            </div>
-                            <div className='bg-orange-50 rounded px-2 py-1'>
-                              <p className='text-xs text-gray-500'>
-                                Pendientes
-                              </p>
-                              <p className='text-sm font-bold text-orange-600'>
-                                {
-                                  cita.pago.pagos.filter(
-                                    (p) => p.estado === "pendiente"
-                                  ).length
-                                }
-                              </p>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       </div>
-                    )}
-
-                    {/* Footer de la cita */}
-                    <div className='flex items-center justify-between pt-3 border-t border-gray-200'>
-                      <div className='text-xs sm:text-sm text-gray-500'>
-                        👆 Click para editar esta cita
-                      </div>
-
-                      <div className='flex items-center space-x-2 text-xs sm:text-sm text-gray-600'>
-                        {cita.observaciones && (
-                          <div className='flex items-center space-x-1'>
-                            <span>📝</span>
-                            <span className='hidden sm:inline'>
-                              Con observaciones
-                            </span>
-                            <span className='sm:hidden'>Obs</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-
-              {citasDelDiaSeleccionado.length === 0 && (
-                <div className='text-center py-8 sm:py-12'>
-                  <div className='bg-gray-100 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4'>
-                    <span className='text-2xl sm:text-3xl'>📅</span>
-                  </div>
-                  <h3 className='text-lg sm:text-xl font-bold text-gray-700 mb-2'>
-                    No hay citas este día
-                  </h3>
-                  <p className='text-gray-500 text-sm sm:text-base'>
-                    Este día no tiene citas programadas
-                  </p>
                 </div>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            {/* Footer del modal - Solo en desktop */}
-            <div className='hidden sm:block p-4 sm:p-6 bg-gray-50 border-t border-gray-200'>
-              <div className='flex items-center justify-between'>
-                <div className='text-sm text-gray-600'>
-                  Total: {citasDelDiaSeleccionado.length} cita
-                  {citasDelDiaSeleccionado.length !== 1 ? "s" : ""} programada
-                  {citasDelDiaSeleccionado.length !== 1 ? "s" : ""}
-                </div>
-                <button
-                  onClick={() => setModalCitasAbierto(false)}
-                  className='bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all text-sm sm:text-base'
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
+      {/* Leyenda */}
+      <div className='p-4 bg-gray-50 border-t border-gray-200'>
+        <div className='flex flex-wrap items-center justify-center gap-4 text-xs'>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-green-100 border border-green-200 rounded'></div>
+            <span>1 cita</span>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-orange-100 border border-orange-200 rounded'></div>
+            <span>2-3 citas</span>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-red-100 border border-red-200 rounded'></div>
+            <span>4+ citas</span>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <div className='w-3 h-3 bg-blue-100 border border-blue-200 rounded'></div>
+            <span>Hoy</span>
           </div>
         </div>
-      )}
-    </>
+        <p className='text-center text-xs text-gray-500 mt-2'>
+          💡 Click en días con citas para ver el listado completo
+        </p>
+      </div>
+    </div>
   );
 };
 // Componente Modal de Gestión de Pagos - RESPONSIVE
