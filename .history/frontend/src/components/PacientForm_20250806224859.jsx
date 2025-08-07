@@ -42,10 +42,8 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     }
   }, [pacienteEditando]);
 
-  // Manejo optimizado del cambio de inputs
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -111,7 +109,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
         type={type}
         name={name}
         placeholder={placeholder}
-        value={formData[name] || ""} // Asegurar string controlado
+        value={formData[name]}
         onChange={handleChange}
         required={required}
         min={min}
@@ -133,7 +131,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
       <textarea
         name={name}
         placeholder={placeholder}
-        value={formData[name] || ""} // Asegurar string controlado
+        value={formData[name]}
         onChange={handleChange}
         rows={rows}
         className='w-full px-3 sm:px-4 py-3 sm:py-4 border border-gray-200 rounded-xl 
