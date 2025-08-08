@@ -19,6 +19,6 @@ router.get("/solicitud/:solicitudId", listarEstudiosPorSolicitud);
 router.get("/paciente/:pacienteId", listarEstudiosPorPaciente);
 
 // ← AGREGAR esta ruta nueva para eliminar
-router.delete("/:id", eliminarArchivo);
+router.delete("/:id", eliminarEstudio);
 
 export default router;

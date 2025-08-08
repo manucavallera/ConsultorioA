@@ -4,7 +4,7 @@ import {
   subirEstudio,
   listarEstudiosPorSolicitud,
   listarEstudiosPorPaciente,
-  eliminarArchivo, // ← AGREGAR esta importación
+  eliminarEstudio, // ← AGREGAR esta importación
 } from "../controllers/estudioLaboratorioController.js";
 
 const router = express.Router();
@@ -19,6 +19,6 @@ router.get("/solicitud/:solicitudId", listarEstudiosPorSolicitud);
 router.get("/paciente/:pacienteId", listarEstudiosPorPaciente);
 
 // ← AGREGAR esta ruta nueva para eliminar
-router.delete("/:id", eliminarArchivo);
+router.delete("/:id", eliminarEstudio);
 
 export default router;
