@@ -392,9 +392,7 @@ export default function SolicitudAnalisis() {
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Seguro que quieres eliminar esta solicitud?")) return;
     try {
-      const res = await fetch(`${API_URL}/solicitudes/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
       setSolicitudes(solicitudes.filter((s) => s._id !== id));
     } catch (err) {
@@ -418,7 +416,7 @@ export default function SolicitudAnalisis() {
     }
     try {
       const analisisObjetos = convertirAnalisisStringAObjeto(analisisEdit);
-      const res = await fetch(`${API_URL}/solicitudes/${editandoId}`, {
+      const res = await fetch(`${API_URL}/${editandoId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -515,7 +513,7 @@ export default function SolicitudAnalisis() {
       console.log("📊 Análisis actualizado:", analisisActualizado);
 
       // ✅ ENVIAR: Mantener toda la estructura original
-      const res = await fetch(`${API_URL}/solicitudes/${editandoValores}`, {
+      const res = await fetch(`${API_URL}/${editandoValores}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

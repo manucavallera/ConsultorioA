@@ -55,7 +55,7 @@ export default function SolicitudAnalisis() {
 
   useEffect(() => {
     if (!pacienteId) return;
-    fetch(`${API_URL}/solicitudes/paciente/${pacienteId}`)
+    fetch(`${API_URL}/paciente/${pacienteId}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then((data) => setSolicitudes(data))
       .catch(() => setError("No se pudieron cargar las solicitudes"));
@@ -352,7 +352,7 @@ export default function SolicitudAnalisis() {
     }
     try {
       const analisisObjetos = convertirAnalisisStringAObjeto(analisis);
-      const res = await fetch(`${API_URL}/solicitudes`, {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -366,7 +366,7 @@ export default function SolicitudAnalisis() {
         throw new Error(err.message);
       }
       const nueva = await res.json();
-      const resPop = await fetch(`${API_URL}/solicitudes/${nueva._id}`);
+      const resPop = await fetch(`${API_URL}/${nueva._id}`);
       const nuevaPopulada = await resPop.json();
       setSolicitudes([nuevaPopulada, ...solicitudes]);
       setDescripcion("");
@@ -380,7 +380,7 @@ export default function SolicitudAnalisis() {
   const handleVerDetalle = async (id) => {
     setError("");
     try {
-      const res = await fetch(`${API_URL}/solicitudes/${id}`);
+      const res = await fetch(`${API_URL}/${id}`);
       if (!res.ok) throw new Error("No encontrada");
       const data = await res.json();
       setDetalle(data);
@@ -392,9 +392,7 @@ export default function SolicitudAnalisis() {
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Seguro que quieres eliminar esta solicitud?")) return;
     try {
-      const res = await fetch(`${API_URL}/solicitudes/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
       setSolicitudes(solicitudes.filter((s) => s._id !== id));
     } catch (err) {
@@ -418,7 +416,7 @@ export default function SolicitudAnalisis() {
     }
     try {
       const analisisObjetos = convertirAnalisisStringAObjeto(analisisEdit);
-      const res = await fetch(`${API_URL}/solicitudes/${editandoId}`, {
+      const res = await fetch(`${API_URL}/${editandoId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -515,7 +513,7 @@ export default function SolicitudAnalisis() {
       console.log("📊 Análisis actualizado:", analisisActualizado);
 
       // ✅ ENVIAR: Mantener toda la estructura original
-      const res = await fetch(`${API_URL}/solicitudes/${editandoValores}`, {
+      const res = await fetch(`${API_URL}/${editandoValores}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
