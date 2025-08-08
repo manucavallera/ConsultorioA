@@ -98,13 +98,7 @@ export default function SolicitudAnalisis() {
     isForEdit = false,
   }) => {
     const [localSearchTerm, setLocalSearchTerm] = useState("");
-    // ✅ CAMBIO: Inicializar TODAS las categorías como expandidas por defecto
-    const [localCategoriaExpandida, setLocalCategoriaExpandida] = useState(
-      Object.keys(CATEGORIAS_ANALISIS).reduce((acc, categoria) => {
-        acc[categoria] = true; // ✅ Todas expandidas por defecto
-        return acc;
-      }, {})
-    );
+    const [localCategoriaExpandida, setLocalCategoriaExpandida] = useState({});
 
     const toggleCategoria = (categoria) => {
       setLocalCategoriaExpandida((prev) => ({
@@ -135,63 +129,22 @@ export default function SolicitudAnalisis() {
       }
     };
 
-    // ✅ FUNCIÓN PARA EXPANDIR/COLAPSAR TODAS
-    const toggleTodasCategorias = () => {
-      const todasExpandidas = Object.values(localCategoriaExpandida).every(
-        Boolean
-      );
-      const nuevoEstado = Object.keys(CATEGORIAS_ANALISIS).reduce(
-        (acc, categoria) => {
-          acc[categoria] = !todasExpandidas;
-          return acc;
-        },
-        {}
-      );
-      setLocalCategoriaExpandida(nuevoEstado);
-    };
-
     const currentNames = extraerNombresAnalisis(currentAnalisis);
 
     return (
       <div className='space-y-3 sm:space-y-4'>
-        {/* Buscador y controles - Responsive */}
-        <div className='space-y-3'>
-          <div className='relative'>
-            <input
-              type='text'
-              placeholder='Buscar análisis...'
-              value={localSearchTerm}
-              onChange={(e) => setLocalSearchTerm(e.target.value)}
-              className='w-full px-3 sm:px-4 py-2 pl-8 sm:pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base'
-            />
-            <span className='absolute left-2 sm:left-3 top-2 sm:top-2.5 text-gray-400'>
-              🔍
-            </span>
-          </div>
-
-          {/* ✅ BOTÓN PARA EXPANDIR/COLAPSAR TODAS */}
-          <div className='flex items-center justify-between'>
-            <button
-              type='button'
-              onClick={toggleTodasCategorias}
-              className='text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1'
-            >
-              <span>
-                {Object.values(localCategoriaExpandida).every(Boolean)
-                  ? "📂"
-                  : "📁"}
-              </span>
-              <span>
-                {Object.values(localCategoriaExpandida).every(Boolean)
-                  ? "Colapsar todas"
-                  : "Expandir todas"}
-              </span>
-            </button>
-
-            <span className='text-xs sm:text-sm text-gray-500'>
-              💡 Las categorías permanecen abiertas para facilitar la selección
-            </span>
-          </div>
+        {/* Buscador - Responsive */}
+        <div className='relative'>
+          <input
+            type='text'
+            placeholder='Buscar análisis...'
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
+            className='w-full px-3 sm:px-4 py-2 pl-8 sm:pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base'
+          />
+          <span className='absolute left-2 sm:left-3 top-2 sm:top-2.5 text-gray-400'>
+            🔍
+          </span>
         </div>
 
         {/* Categorías - Responsive */}
@@ -224,17 +177,6 @@ export default function SolicitudAnalisis() {
                     <span className='truncate'>
                       {categoria} ({itemsFiltrados.length})
                     </span>
-                    {/* ✅ INDICADOR VISUAL DE SELECCIONES */}
-                    {algunosMarcados && (
-                      <span className='ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full'>
-                        {
-                          currentNames.filter((name) =>
-                            itemsFiltrados.includes(name)
-                          ).length
-                        }{" "}
-                        seleccionados
-                      </span>
-                    )}
                   </button>
                   <button
                     type='button'
@@ -251,18 +193,12 @@ export default function SolicitudAnalisis() {
                   </button>
                 </div>
 
-                {/* ✅ MOSTRAR SIEMPRE SI ESTÁ EXPANDIDO O HAY BÚSQUEDA */}
                 {(localCategoriaExpandida[categoria] || localSearchTerm) && (
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 ml-3 sm:ml-4'>
                     {itemsFiltrados.map((item) => (
                       <label
                         key={item}
-                        className={`flex items-center space-x-2 p-2 rounded-lg transition-colors cursor-pointer
-                        ${
-                          currentNames.includes(item)
-                            ? "bg-blue-50 hover:bg-blue-100 border border-blue-200"
-                            : "hover:bg-white border border-transparent"
-                        }`}
+                        className='flex items-center space-x-2 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer'
                       >
                         <input
                           type='checkbox'
@@ -271,22 +207,9 @@ export default function SolicitudAnalisis() {
                           onChange={onCheckboxChange}
                           className='w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
                         />
-                        <span
-                          className={`text-xs sm:text-sm truncate transition-colors
-                        ${
-                          currentNames.includes(item)
-                            ? "text-blue-800 font-medium"
-                            : "text-gray-700"
-                        }`}
-                        >
+                        <span className='text-xs sm:text-sm text-gray-700 truncate'>
                           {item}
                         </span>
-                        {/* ✅ INDICADOR VISUAL CUANDO ESTÁ SELECCIONADO */}
-                        {currentNames.includes(item) && (
-                          <span className='text-blue-600 text-xs flex-shrink-0'>
-                            ✓
-                          </span>
-                        )}
                       </label>
                     ))}
                   </div>
@@ -296,47 +219,19 @@ export default function SolicitudAnalisis() {
           })}
         </div>
 
-        {/* Análisis seleccionados - Responsive y mejorado */}
+        {/* Análisis seleccionados - Responsive */}
         {currentAnalisis.length > 0 && (
-          <div className='bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-200'>
-            <div className='flex items-center justify-between mb-2'>
-              <p className='text-xs sm:text-sm font-medium text-blue-800'>
-                Análisis seleccionados ({currentAnalisis.length}):
-              </p>
-              {/* ✅ BOTÓN PARA LIMPIAR TODOS */}
-              <button
-                type='button'
-                onClick={() => {
-                  currentNames.forEach((nombre) => {
-                    onCheckboxChange({
-                      target: { value: nombre, checked: false },
-                    });
-                  });
-                }}
-                className='text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 hover:bg-red-50 rounded transition-colors'
-              >
-                🗑️ Limpiar todos
-              </button>
-            </div>
+          <div className='bg-blue-50 rounded-xl p-3 sm:p-4'>
+            <p className='text-xs sm:text-sm font-medium text-blue-800 mb-2'>
+              Análisis seleccionados ({currentAnalisis.length}):
+            </p>
             <div className='flex flex-wrap gap-1 sm:gap-2'>
               {currentNames.map((item) => (
                 <span
                   key={item}
-                  className='bg-blue-100 text-blue-800 text-xs px-2 sm:px-3 py-1 rounded-full flex items-center space-x-1 group'
+                  className='bg-blue-100 text-blue-800 text-xs px-2 sm:px-3 py-1 rounded-full'
                 >
-                  <span>{item}</span>
-                  {/* ✅ BOTÓN X PARA QUITAR INDIVIDUAL */}
-                  <button
-                    type='button'
-                    onClick={() =>
-                      onCheckboxChange({
-                        target: { value: item, checked: false },
-                      })
-                    }
-                    className='text-blue-600 hover:text-red-600 ml-1 opacity-0 group-hover:opacity-100 transition-opacity'
-                  >
-                    ✕
-                  </button>
+                  {item}
                 </span>
               ))}
             </div>
@@ -345,6 +240,7 @@ export default function SolicitudAnalisis() {
       </div>
     );
   };
+
   const handleCrear = async (e) => {
     e.preventDefault();
     setError("");
@@ -478,76 +374,39 @@ export default function SolicitudAnalisis() {
   const handleGuardarValores = async () => {
     setError("");
     try {
-      console.log("📊 Datos a enviar:", valoresTemp);
-
-      // ✅ CORREGIDO: Obtener la solicitud actual para mantener su estructura
-      const solicitudActual = solicitudes.find(
-        (s) => s._id === editandoValores
+      const analisisConValores = Object.entries(valoresTemp).map(
+        ([nombre, datos]) => ({
+          nombre,
+          valor: datos.valor
+            ? isNaN(parseFloat(datos.valor))
+              ? datos.valor
+              : parseFloat(datos.valor)
+            : null,
+          unidad: datos.unidad || "",
+        })
       );
 
-      if (!solicitudActual) {
-        throw new Error("No se encontró la solicitud");
-      }
-
-      // ✅ NUEVO: Actualizar solo los valores en el array existente
-      const analisisActualizado = solicitudActual.analisis.map((item) => {
-        const nombre = typeof item === "string" ? item : item.nombre;
-
-        // Si hay valores temporales para este análisis, actualizarlos
-        if (valoresTemp[nombre]) {
-          return {
-            nombre: nombre,
-            valor: valoresTemp[nombre].valor
-              ? isNaN(parseFloat(valoresTemp[nombre].valor))
-                ? valoresTemp[nombre].valor
-                : parseFloat(valoresTemp[nombre].valor)
-              : null,
-            unidad: valoresTemp[nombre].unidad || "",
-          };
-        }
-
-        // Si no hay cambios, mantener el formato original
-        return typeof item === "string"
-          ? { nombre: item, valor: null, unidad: "" }
-          : item;
-      });
-
-      console.log("📊 Análisis actualizado:", analisisActualizado);
-
-      // ✅ ENVIAR: Mantener toda la estructura original
-      const res = await fetch(`${API_URL}/${editandoValores}`, {
-        method: "PUT",
+      const res = await fetch(`${API_URL}/${editandoValores}/valores`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          descripcion: solicitudActual.descripcion,
-          analisis: analisisActualizado, // ✅ Array completo actualizado
-          pacienteId:
-            solicitudActual.pacienteId._id || solicitudActual.pacienteId,
+          analisis: analisisConValores,
         }),
       });
 
-      console.log("🔍 Respuesta del servidor:", res.status, res.statusText);
-
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("❌ Error del servidor:", errorText);
-        throw new Error(`Error ${res.status}: ${errorText}`);
+        const err = await res.json();
+        throw new Error(err.message);
       }
 
       const actualizada = await res.json();
-      console.log("✅ Actualización exitosa:", actualizada);
-
       setSolicitudes(
         solicitudes.map((s) => (s._id === editandoValores ? actualizada : s))
       );
       setEditandoValores(null);
       setValoresTemp({});
-
-      setError(""); // Limpiar errores
-      alert("✅ Valores guardados correctamente");
     } catch (err) {
-      console.error("❌ Error completo:", err);
-      setError(`Error al guardar valores: ${err.message}`);
+      setError(err.message || "Error al guardar valores");
     }
   };
 

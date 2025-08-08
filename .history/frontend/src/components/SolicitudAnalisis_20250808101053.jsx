@@ -345,6 +345,154 @@ export default function SolicitudAnalisis() {
       </div>
     );
   };
+  const AnalysisCheckboxes = ({
+    currentAnalisis,
+    onCheckboxChange,
+    isForEdit = false,
+  }) => {
+    const [localSearchTerm, setLocalSearchTerm] = useState("");
+    const [localCategoriaExpandida, setLocalCategoriaExpandida] = useState({});
+
+    const toggleCategoria = (categoria) => {
+      setLocalCategoriaExpandida((prev) => ({
+        ...prev,
+        [categoria]: !prev[categoria],
+      }));
+    };
+
+    const seleccionarTodaCategoria = (categoria) => {
+      const analisisCategoria = CATEGORIAS_ANALISIS[categoria];
+      const currentNames = extraerNombresAnalisis(currentAnalisis);
+      const todosMarcados = analisisCategoria.every((item) =>
+        currentNames.includes(item)
+      );
+
+      if (todosMarcados) {
+        analisisCategoria.forEach((item) => {
+          if (currentNames.includes(item)) {
+            onCheckboxChange({ target: { value: item, checked: false } });
+          }
+        });
+      } else {
+        analisisCategoria.forEach((item) => {
+          if (!currentNames.includes(item)) {
+            onCheckboxChange({ target: { value: item, checked: true } });
+          }
+        });
+      }
+    };
+
+    const currentNames = extraerNombresAnalisis(currentAnalisis);
+
+    return (
+      <div className='space-y-3 sm:space-y-4'>
+        {/* Buscador - Responsive */}
+        <div className='relative'>
+          <input
+            type='text'
+            placeholder='Buscar análisis...'
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
+            className='w-full px-3 sm:px-4 py-2 pl-8 sm:pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base'
+          />
+          <span className='absolute left-2 sm:left-3 top-2 sm:top-2.5 text-gray-400'>
+            🔍
+          </span>
+        </div>
+
+        {/* Categorías - Responsive */}
+        <div className='max-h-60 sm:max-h-80 overflow-y-auto border border-gray-200 rounded-xl bg-gray-50 p-3 sm:p-4'>
+          {Object.entries(CATEGORIAS_ANALISIS).map(([categoria, items]) => {
+            const itemsFiltrados = items.filter((item) =>
+              item.toLowerCase().includes(localSearchTerm.toLowerCase())
+            );
+
+            if (itemsFiltrados.length === 0 && localSearchTerm) return null;
+
+            const todosMarcados = itemsFiltrados.every((item) =>
+              currentNames.includes(item)
+            );
+            const algunosMarcados = itemsFiltrados.some((item) =>
+              currentNames.includes(item)
+            );
+
+            return (
+              <div key={categoria} className='mb-3 sm:mb-4'>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0'>
+                  <button
+                    type='button'
+                    onClick={() => toggleCategoria(categoria)}
+                    className='flex items-center space-x-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors text-left'
+                  >
+                    <span>
+                      {localCategoriaExpandida[categoria] ? "📂" : "📁"}
+                    </span>
+                    <span className='truncate'>
+                      {categoria} ({itemsFiltrados.length})
+                    </span>
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => seleccionarTodaCategoria(categoria)}
+                    className={`text-xs px-2 sm:px-3 py-1 rounded-full transition-all flex-shrink-0 ${
+                      todosMarcados
+                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        : algunosMarcados
+                        ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {todosMarcados ? "Desmarcar todos" : "Marcar todos"}
+                  </button>
+                </div>
+
+                {(localCategoriaExpandida[categoria] || localSearchTerm) && (
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 ml-3 sm:ml-4'>
+                    {itemsFiltrados.map((item) => (
+                      <label
+                        key={item}
+                        className='flex items-center space-x-2 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer'
+                      >
+                        <input
+                          type='checkbox'
+                          value={item}
+                          checked={currentNames.includes(item)}
+                          onChange={onCheckboxChange}
+                          className='w-3 h-3 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+                        />
+                        <span className='text-xs sm:text-sm text-gray-700 truncate'>
+                          {item}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Análisis seleccionados - Responsive */}
+        {currentAnalisis.length > 0 && (
+          <div className='bg-blue-50 rounded-xl p-3 sm:p-4'>
+            <p className='text-xs sm:text-sm font-medium text-blue-800 mb-2'>
+              Análisis seleccionados ({currentAnalisis.length}):
+            </p>
+            <div className='flex flex-wrap gap-1 sm:gap-2'>
+              {currentNames.map((item) => (
+                <span
+                  key={item}
+                  className='bg-blue-100 text-blue-800 text-xs px-2 sm:px-3 py-1 rounded-full'
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   const handleCrear = async (e) => {
     e.preventDefault();
     setError("");

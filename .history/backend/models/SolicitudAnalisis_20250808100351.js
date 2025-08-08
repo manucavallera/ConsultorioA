@@ -1,5 +1,3 @@
-import mongoose from "mongoose";
-
 const solicitudAnalisisSchema = new mongoose.Schema({
   pacienteId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -13,7 +11,7 @@ const solicitudAnalisisSchema = new mongoose.Schema({
         required: true,
       },
       valor: {
-        type: mongoose.Schema.Types.Mixed, // ✅ Cambiado para aceptar texto y números
+        type: mongoose.Schema.Types.Mixed, // ✅ CAMBIO: Acepta números Y texto
         default: null,
       },
       unidad: {
@@ -37,6 +35,3 @@ const solicitudAnalisisSchema = new mongoose.Schema({
     default: "Pendiente",
   },
 });
-
-// ✅ ASEGURATE QUE ESTÉ ASÍ:
-export default mongoose.model("SolicitudAnalisis", solicitudAnalisisSchema);

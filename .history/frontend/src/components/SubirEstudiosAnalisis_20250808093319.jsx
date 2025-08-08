@@ -138,41 +138,6 @@ const SubirEstudioAnalisis = (props) => {
     }
   };
 
-  // Agregar después de la función cargarEstudios:
-  const eliminarEstudio = async (estudioId, nombreArchivo) => {
-    const confirmacion = window.confirm(
-      `¿Estás seguro de que quieres eliminar el archivo "${nombreArchivo}"?\n\nEsta acción no se puede deshacer.`
-    );
-
-    if (!confirmacion) return;
-
-    setEliminandoEstudio(estudioId); // Marcar como eliminando
-    setErrorSubir("");
-    setExitoSubir("");
-
-    try {
-      const response = await fetch(`${API_URL}/estudios/${estudioId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al eliminar el estudio");
-      }
-
-      setExitoSubir(`✅ Archivo "${nombreArchivo}" eliminado exitosamente`);
-      await cargarEstudios();
-      setTimeout(() => setExitoSubir(""), 5000);
-    } catch (error) {
-      console.error("Error al eliminar estudio:", error);
-      setErrorSubir(
-        `❌ Error al eliminar "${nombreArchivo}": ${error.message}`
-      );
-    } finally {
-      setEliminandoEstudio(null); // Quitar estado de eliminando
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!archivo || !solicitudId) return;
@@ -645,34 +610,12 @@ const SubirEstudioAnalisis = (props) => {
           ) : (
             <div className='p-4 sm:p-6'>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-                {estudios.map((est) => (
+                {estudios.map((est, idx) => (
                   <div
                     key={est._id}
                     className='bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6 
-      hover:shadow-lg transition-all duration-200 relative'
+                      hover:shadow-lg transition-all duration-200'
                   >
-                    {/* ✅ BOTÓN DE ELIMINAR FLOTANTE */}
-                    <button
-                      onClick={() =>
-                        eliminarEstudio(est._id, est.nombreArchivo)
-                      }
-                      disabled={eliminandoEstudio === est._id}
-                      className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
-                        eliminandoEstudio === est._id
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transform hover:scale-110"
-                      }`}
-                      title={`Eliminar ${est.nombreArchivo}`}
-                    >
-                      {eliminandoEstudio === est._id ? (
-                        <span className='text-white text-xs animate-spin'>
-                          ⟲
-                        </span>
-                      ) : (
-                        <span className='text-white text-xs'>🗑️</span>
-                      )}
-                    </button>
-
                     {/* Preview */}
                     <div className='text-center mb-4'>
                       {getFileType(est.nombreArchivo) === "image" ? (
@@ -686,7 +629,7 @@ const SubirEstudioAnalisis = (props) => {
                             src={est.archivoUrl}
                             alt={est.nombreArchivo}
                             className='w-full h-24 sm:h-32 object-cover rounded-lg border border-gray-200 
-              hover:scale-105 transition-transform duration-200'
+                              hover:scale-105 transition-transform duration-200'
                           />
                         </a>
                       ) : getFileType(est.nombreArchivo) === "pdf" ? (
@@ -695,7 +638,7 @@ const SubirEstudioAnalisis = (props) => {
                           target='_blank'
                           rel='noopener noreferrer'
                           className='flex flex-col items-center justify-center h-24 sm:h-32 bg-red-50 rounded-lg 
-            border border-red-200 hover:bg-red-100 transition-colors duration-200'
+                            border border-red-200 hover:bg-red-100 transition-colors duration-200'
                         >
                           <span className='text-3xl sm:text-4xl mb-2'>📄</span>
                           <span className='text-red-700 font-medium text-xs sm:text-sm'>
@@ -731,38 +674,17 @@ const SubirEstudioAnalisis = (props) => {
                     </div>
 
                     {/* Actions */}
-                    <div className='mt-4 space-y-2'>
+                    <div className='mt-4'>
                       <a
                         href={est.archivoUrl}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='w-full bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 sm:px-4 py-2 rounded-lg 
-          font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center space-x-2'
+                          font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center space-x-2'
                       >
                         <span>👁️</span>
                         <span>Ver archivo</span>
                       </a>
-
-                      <button
-                        onClick={() =>
-                          eliminarEstudio(est._id, est.nombreArchivo)
-                        }
-                        disabled={eliminandoEstudio === est._id}
-                        className={`w-full px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center space-x-2 ${
-                          eliminandoEstudio === est._id
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-red-100 text-red-700 hover:bg-red-200"
-                        }`}
-                      >
-                        <span>
-                          {eliminandoEstudio === est._id ? "⏳" : "🗑️"}
-                        </span>
-                        <span>
-                          {eliminandoEstudio === est._id
-                            ? "Eliminando..."
-                            : "Eliminar archivo"}
-                        </span>
-                      </button>
                     </div>
                   </div>
                 ))}
