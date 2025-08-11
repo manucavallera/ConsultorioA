@@ -66,45 +66,6 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     setHistorialData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  // ✅ VALIDACIÓN MEJORADA - Campos básicos requeridos
-  const validarCamposBasicos = () => {
-    const camposRequeridos = ["nombre", "apellido", "dni"];
-    const camposFaltantes = camposRequeridos.filter(
-      (campo) => !formData[campo]?.trim()
-    );
-
-    if (camposFaltantes.length > 0) {
-      alert(
-        `Por favor complete los siguientes campos requeridos: ${camposFaltantes.join(
-          ", "
-        )}`
-      );
-      return false;
-    }
-
-    // Validar formato de email si está presente
-    if (formData.email && formData.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        alert("Por favor ingrese un email válido");
-        return false;
-      }
-    }
-
-    // Validar edad si está presente
-    if (
-      formData.edad &&
-      (isNaN(formData.edad) ||
-        parseInt(formData.edad) < 0 ||
-        parseInt(formData.edad) > 150)
-    ) {
-      alert("Por favor ingrese una edad válida (0-150)");
-      return false;
-    }
-
-    return true;
-  };
-
   // NUEVO: Validar que campos requeridos del historial estén completos
   const validarHistorial = () => {
     if (!incluirHistorial) return true;
@@ -116,66 +77,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
       "tipoAlopecia",
     ];
 
-    const camposFaltantes = camposRequeridos.filter(
-      (campo) => !historialData[campo]
-    );
-
-    if (camposFaltantes.length > 0) {
-      alert(
-        `Por favor complete los siguientes campos requeridos del historial: ${camposFaltantes.join(
-          ", "
-        )}`
-      );
-      return false;
-    }
-    return true;
-  };
-
-  // ✅ PREPARAR DATOS - Limpiar y formatear
-  const prepararDatos = () => {
-    // Limpiar espacios en blanco y convertir tipos
-    const pacienteLimpio = {};
-    Object.keys(formData).forEach((key) => {
-      let valor = formData[key];
-
-      if (typeof valor === "string") {
-        valor = valor.trim();
-      }
-
-      // Convertir edad a número si existe
-      if (key === "edad" && valor) {
-        valor = parseInt(valor);
-      }
-
-      // Solo incluir campos que no estén vacíos
-      if (valor !== "" && valor !== null && valor !== undefined) {
-        pacienteLimpio[key] = valor;
-      }
-    });
-
-    // Si incluye historial y no es edición
-    if (incluirHistorial && !pacienteEditando) {
-      const historialLimpio = {};
-      Object.keys(historialData).forEach((key) => {
-        let valor = historialData[key];
-
-        if (typeof valor === "string") {
-          valor = valor.trim();
-        }
-
-        // Solo incluir campos que no estén vacíos
-        if (valor !== "" && valor !== null && valor !== undefined) {
-          historialLimpio[key] = valor;
-        }
-      });
-
-      return {
-        ...pacienteLimpio,
-        historial: historialLimpio,
-      };
-    }
-
-    return pacienteLimpio;
+    return camposRequeridos.every((campo) => historialData[campo]);
   };
 
   const handleSubmit = async (e) => {
@@ -183,24 +85,16 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     setIsSubmitting(true);
 
     try {
-      // ✅ VALIDACIONES
-      console.log("🔍 Validando campos...");
-
-      if (!validarCamposBasicos()) {
+      // Validar historial si está incluido
+      if (incluirHistorial && !validarHistorial()) {
+        alert(
+          "Por favor complete todos los campos requeridos del historial clínico"
+        );
         setIsSubmitting(false);
         return;
       }
 
-      if (!validarHistorial()) {
-        setIsSubmitting(false);
-        return;
-      }
-
-      // ✅ PREPARAR DATOS
-      console.log("📋 Preparando datos...");
-      const dataToSend = prepararDatos();
-
-      // ✅ DETERMINAR URL Y MÉTODO
+      // Determinar URL y datos según si incluye historial
       const url =
         incluirHistorial && !pacienteEditando
           ? `${API_URL}/pacientes/con-historial`
@@ -210,62 +104,30 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
 
       const method = pacienteEditando ? "PUT" : "POST";
 
-      // 🚀 LOG PARA DEBUG
-      console.log("🚀 Enviando request:", {
-        url,
-        method,
-        data: dataToSend,
-      });
+      // Preparar datos
+      const dataToSend =
+        incluirHistorial && !pacienteEditando
+          ? {
+              ...formData,
+              historial: historialData,
+            }
+          : formData;
 
-      // ✅ ENVIAR REQUEST CON MEJOR MANEJO DE ERRORES
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend),
       });
 
-      console.log("📨 Response status:", res.status);
-
-      // ✅ MANEJO DETALLADO DE ERRORES
       if (!res.ok) {
-        let errorMessage = `Error ${res.status}: ${res.statusText}`;
-
-        try {
-          const errorData = await res.json();
-          console.error("❌ Error response:", errorData);
-
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.errors) {
-            if (Array.isArray(errorData.errors)) {
-              errorMessage = `Errores: ${errorData.errors.join(", ")}`;
-            } else if (typeof errorData.errors === "object") {
-              const errorsArray = Object.values(errorData.errors);
-              errorMessage = `Errores de validación: ${errorsArray.join(", ")}`;
-            }
-          }
-        } catch (parseError) {
-          console.error("❌ No se pudo parsear error response:", parseError);
-        }
-
-        alert(errorMessage);
-        setIsSubmitting(false);
-        return;
+        throw new Error("Error al guardar paciente");
       }
 
-      // ✅ PROCESAR RESPUESTA EXITOSA
       const data = await res.json();
-      console.log("✅ Paciente guardado exitosamente:", data);
-
       onPacienteSubmit(data, pacienteEditando ? "editado" : "creado");
 
-      // ✅ LIMPIAR FORMULARIO SI ES CREACIÓN
       if (!pacienteEditando) {
+        // Limpiar formularios
         setFormData({
           nombre: "",
           apellido: "",
@@ -293,8 +155,8 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
         setCurrentStep(1);
       }
     } catch (err) {
-      console.error("❌ Error completo:", err);
-      alert(`Error al guardar el paciente: ${err.message}`);
+      console.error("Error al guardar paciente:", err);
+      alert("Error al guardar el paciente. Por favor intente nuevamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -393,7 +255,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
           <StepIndicator />
 
           {/* Form Container */}
-          <form onSubmit={handleSubmit} className='p-4 sm:p-8'>
+          <div className='p-4 sm:p-8'>
             {/* Step 1: Datos Personales */}
             <div
               className={`${currentStep !== 1 ? "hidden md:block" : ""} mb-8`}
@@ -438,7 +300,6 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   placeholder='Edad'
                   type='number'
                   min='0'
-                  max='150'
                   icon='📅'
                   className='sm:col-span-1'
                   value={formData.edad}
@@ -787,7 +648,8 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                 Cancelar
               </button>
               <button
-                type='submit'
+                type='button'
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className='px-8 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white 
                   rounded-xl hover:from-teal-700 hover:to-blue-700 transition-all duration-200 
@@ -806,7 +668,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                 </span>
               </button>
             </div>
-          </form>
+          </div>
         </div>
 
         {/* Form Progress Summary - Solo móvil - ACTUALIZADO */}
@@ -825,3 +687,5 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     </div>
   );
 }
+
+export default PacientForm;

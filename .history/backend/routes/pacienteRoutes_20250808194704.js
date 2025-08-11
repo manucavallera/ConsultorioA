@@ -5,7 +5,6 @@ import {
   obtenerPacientePorId,
   actualizarPaciente,
   eliminarPaciente,
-  crearPacienteConHistorial,
 } from "../controllers/pacienteController.js";
 
 const router = express.Router();

@@ -1,6 +1,5 @@
 import Paciente from "../models/Paciente.js";
-import HistorialClinico from "../models/HistorialClinico.js"; // ← AGREGAR ESTA IMPORTACIÓN
-import mongoose from "mongoose"; // ← AGREGAR ESTA IMPORTACIÓN
+
 // Crear un nuevo paciente
 export const crearPaciente = async (req, res) => {
   try {
@@ -61,6 +60,10 @@ export const eliminarPaciente = async (req, res) => {
     res.status(500).json({ mensaje: "Error al eliminar paciente", error });
   }
 };
+
+import Paciente from "../models/Paciente.js";
+import HistorialClinico from "../models/HistorialClinico.js"; // ← AGREGAR ESTA IMPORTACIÓN
+import mongoose from "mongoose"; // ← AGREGAR ESTA IMPORTACIÓN
 
 // ... tus funciones existentes quedan igual ...
 

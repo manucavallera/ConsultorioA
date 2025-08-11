@@ -62,6 +62,10 @@ export const eliminarPaciente = async (req, res) => {
   }
 };
 
+import Paciente from "../models/Paciente.js";
+import HistorialClinico from "../models/HistorialClinico.js"; // ← AGREGAR ESTA IMPORTACIÓN
+import mongoose from "mongoose"; // ← AGREGAR ESTA IMPORTACIÓN
+
 // ... tus funciones existentes quedan igual ...
 
 // NUEVA FUNCIÓN - Agregar al final del archivo
