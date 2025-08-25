@@ -9,8 +9,11 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     dni: "",
     telefono: "",
     email: "",
+    direccion: "", // Agregado
+    fechaNacimiento: "", // Agregado
     genero: "",
     edad: "",
+    alimentacion: "", // Agregado
     antecedentesEnfermedad: "",
     antecedentesFamiliares: "",
     alergias: "",
@@ -43,8 +46,15 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
         dni: pacienteEditando.dni || "",
         telefono: pacienteEditando.telefono || "",
         email: pacienteEditando.email || "",
+        direccion: pacienteEditando.direccion || "",
+        fechaNacimiento: pacienteEditando.fechaNacimiento
+          ? new Date(pacienteEditando.fechaNacimiento)
+              .toISOString()
+              .split("T")[0]
+          : "",
         genero: pacienteEditando.genero || "",
         edad: pacienteEditando.edad || "",
+        alimentacion: pacienteEditando.alimentacion || "",
         antecedentesEnfermedad: pacienteEditando.antecedentesEnfermedad || "",
         antecedentesFamiliares: pacienteEditando.antecedentesFamiliares || "",
         alergias: pacienteEditando.alergias || "",
@@ -100,6 +110,19 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
     ) {
       alert("Por favor ingrese una edad válida (0-150)");
       return false;
+    }
+
+    // Validar fecha de nacimiento si está presente
+    if (formData.fechaNacimiento) {
+      const fechaNac = new Date(formData.fechaNacimiento);
+      const hoy = new Date();
+      const hace150Anos = new Date();
+      hace150Anos.setFullYear(hoy.getFullYear() - 150);
+
+      if (fechaNac > hoy || fechaNac < hace150Anos) {
+        alert("Por favor ingrese una fecha de nacimiento válida");
+        return false;
+      }
     }
 
     return true;
@@ -235,7 +258,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
 
         try {
           const errorData = await res.json();
-          console.error("❌ Error response:", errorData);
+          console.error("⌐ Error response:", errorData);
 
           if (errorData.message) {
             errorMessage = errorData.message;
@@ -250,7 +273,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
             }
           }
         } catch (parseError) {
-          console.error("❌ No se pudo parsear error response:", parseError);
+          console.error("⌐ No se pudo parsear error response:", parseError);
         }
 
         alert(errorMessage);
@@ -272,8 +295,11 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
           dni: "",
           telefono: "",
           email: "",
+          direccion: "",
+          fechaNacimiento: "",
           genero: "",
           edad: "",
+          alimentacion: "",
           antecedentesEnfermedad: "",
           antecedentesFamiliares: "",
           alergias: "",
@@ -293,7 +319,7 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
         setCurrentStep(1);
       }
     } catch (err) {
-      console.error("❌ Error completo:", err);
+      console.error("⌐ Error completo:", err);
       alert(`Error al guardar el paciente: ${err.message}`);
     } finally {
       setIsSubmitting(false);
@@ -433,6 +459,18 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   value={formData.dni}
                   onChange={handleChange}
                 />
+
+                {/* NUEVO: Fecha de Nacimiento */}
+                <InputField
+                  name='fechaNacimiento'
+                  placeholder='Fecha de Nacimiento'
+                  type='date'
+                  icon='📅'
+                  className='sm:col-span-1'
+                  value={formData.fechaNacimiento}
+                  onChange={handleChange}
+                />
+
                 <InputField
                   name='edad'
                   placeholder='Edad'
@@ -483,6 +521,16 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   value={formData.email}
                   onChange={handleChange}
                 />
+
+                {/* NUEVO: Dirección */}
+                <InputField
+                  name='direccion'
+                  placeholder='Dirección'
+                  icon='🏠'
+                  className='sm:col-span-2'
+                  value={formData.direccion}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
@@ -521,6 +569,15 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
                   placeholder='Alergias conocidas'
                   icon='⚠️'
                   value={formData.alergias}
+                  onChange={handleChange}
+                />
+
+                {/* NUEVO: Alimentación */}
+                <InputField
+                  name='alimentacion'
+                  placeholder='Tipo de alimentación (ej: vegetariana, sin gluten, etc.)'
+                  icon='🍽️'
+                  value={formData.alimentacion}
                   onChange={handleChange}
                 />
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import jsPDF from "jspdf";
 
@@ -71,6 +71,151 @@ const obtenerColorTipo = (tipo) => {
   return colores[tipo] || "bg-gray-500";
 };
 
+// ✅ NUEVA FUNCIÓN PARA OBTENER CITAS POR DÍA DE LA SEMANA
+
+// ✅ COMPONENTE TARJETA PARA VISTA SEMANAL
+const TarjetaCitaSemanal = ({
+  cita,
+  onEditar,
+  onEliminar,
+  onCambiarEstado,
+}) => {
+  const [mostrarAcciones, setMostrarAcciones] = useState(false);
+  const accionesRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (accionesRef.current && !accionesRef.current.contains(event.target)) {
+        setMostrarAcciones(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      className={`p-3 rounded-lg cursor-pointer transition-all hover:shadow-md transform hover:scale-105 ${
+        cita.estado === "Completada"
+          ? "bg-green-100 border-l-4 border-green-500"
+          : cita.estado === "En curso"
+          ? "bg-yellow-100 border-l-4 border-yellow-500"
+          : "bg-blue-100 border-l-4 border-blue-500"
+      }`}
+      onClick={() => onEditar(cita)}
+    >
+      {/* INFORMACIÓN PRINCIPAL */}
+      <div className='mb-2'>
+        <div className='font-bold text-lg text-gray-900 mb-1'>{cita.hora}</div>
+
+        <div className='font-semibold text-sm text-gray-800 mb-1'>
+          {cita.pacienteId.nombre} {cita.pacienteId.apellido}
+        </div>
+
+        <div className='flex items-center text-xs text-gray-600 mb-2'>
+          <span className='mr-1'>{obtenerIconoTipo(cita.tipoConsulta)}</span>
+          <span>{cita.tipoConsulta}</span>
+        </div>
+      </div>
+
+      {/* FECHA ESPECÍFICA */}
+      <div className='text-xs text-gray-500 mb-2'>
+        📅 {formatearFecha(cita.fecha)}
+      </div>
+
+      {/* DURACIÓN Y ESTADO */}
+      <div className='flex items-center justify-between mb-2'>
+        <div className='text-xs text-gray-500'>
+          ⏱️ {cita.duracion || 60} min
+        </div>
+
+        <div
+          className={`text-xs px-2 py-1 rounded font-bold text-center ${
+            cita.estado === "Completada"
+              ? "bg-green-200 text-green-800"
+              : cita.estado === "En curso"
+              ? "bg-yellow-200 text-yellow-800"
+              : "bg-blue-200 text-blue-800"
+          }`}
+        >
+          {cita.estado}
+        </div>
+      </div>
+
+      {/* INFORMACIÓN DE CONTACTO */}
+      {cita.pacienteId.telefono && (
+        <div className='text-xs text-gray-500 mb-2 truncate'>
+          📱 {cita.pacienteId.telefono}
+        </div>
+      )}
+
+      {/* INFORMACIÓN DE PAGOS */}
+      {cita.pago?.pagos && (
+        <div className='text-xs text-gray-500 mb-2'>
+          💳 {cita.pago.pagos.filter((p) => p.estado === "pagado").length}/
+          {cita.pago.pagos.length} pagados
+        </div>
+      )}
+
+      {/* ACCIONES RÁPIDAS */}
+      <div className='flex gap-1 mt-2'>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditar(cita);
+          }}
+          className='flex-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-100 py-1 rounded transition-all'
+          title='Editar cita'
+        >
+          ✏️ Editar
+        </button>
+
+        <div className='relative' ref={accionesRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMostrarAcciones(!mostrarAcciones);
+            }}
+            className='text-xs text-green-600 hover:text-green-800 hover:bg-green-100 px-2 py-1 rounded transition-all'
+            title='Cambiar estado'
+          >
+            ✅
+          </button>
+
+          {mostrarAcciones && (
+            <div className='absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-xl z-10 min-w-32'>
+              {["Programada", "En curso", "Completada"].map((estado) => (
+                <button
+                  key={estado}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCambiarEstado(cita._id, estado);
+                    setMostrarAcciones(false);
+                  }}
+                  className='w-full text-left px-3 py-2 hover:bg-gray-50 text-xs font-medium transition-all first:rounded-t-lg last:rounded-b-lg'
+                >
+                  {estado}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEliminar(cita._id);
+          }}
+          className='text-xs text-red-600 hover:text-red-800 hover:bg-red-100 px-2 py-1 rounded transition-all'
+          title='Eliminar cita'
+        >
+          🗑️
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function CitasDashboard() {
   const navigate = useNavigate();
   const { pacienteId } = useParams();
@@ -97,6 +242,19 @@ export default function CitasDashboard() {
     localStorage.getItem("numeroDoctor") || "+5491123456789"
   );
 
+  const citasDeHoy = useMemo(() => {
+    const hoy = obtenerFechaHoy();
+    return citas
+      .filter((cita) => {
+        if (!cita || !cita.pacienteId) return false;
+        const fechaCita = cita.fecha.includes("T")
+          ? cita.fecha.split("T")[0]
+          : cita.fecha;
+        return fechaCita === hoy;
+      })
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+  }, [citas]);
+
   // Estados para formulario
   const [showForm, setShowForm] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -113,8 +271,9 @@ export default function CitasDashboard() {
   // Estados para filtros
   const [filtroEstado, setFiltroEstado] = useState("Todas");
   const [filtroFecha, setFiltroFecha] = useState("");
-  const [filtroPaciente, setFiltroPaciente] = useState(pacienteId || "");
+  const [filtroPaciente, setFiltroPaciente] = useState(""); // Vacío = todos los pacientes
   const [vistaModo, setVistaModo] = useState("lista");
+  const [vistaCompleta, setVistaCompleta] = useState(false);
 
   // ✅ FUNCIONES DESPUÉS DE TODOS LOS ESTADOS
   const configurarNumeroDoctor = () => {
@@ -718,21 +877,30 @@ export default function CitasDashboard() {
 
   // ✅ FILTROS CORREGIDOS INCLUYENDO PACIENTE Y PAGOS:
   const citasFiltradas = citas.filter((cita) => {
+    // ✅ VALIDAR QUE LA CITA EXISTA Y TENGA LOS DATOS NECESARIOS
+    if (!cita || !cita.pacienteId) {
+      console.warn("⚠️ Cita sin datos de paciente encontrada:", cita);
+      return false;
+    }
+
     const cumpleFiltroEstado =
       filtroEstado === "Todas" || cita.estado === filtroEstado;
 
     const cumpleFiltroFecha =
       !filtroFecha ||
-      (cita.fecha.includes("T") ? cita.fecha.split("T")[0] : cita.fecha) ===
-        filtroFecha;
+      (cita.fecha && cita.fecha.includes("T")
+        ? cita.fecha.split("T")[0]
+        : cita.fecha) === filtroFecha;
 
+    // ✅ VALIDAR QUE pacienteId EXISTA Y TENGA _id
     const cumpleFiltroPaciente =
-      !filtroPaciente || cita.pacienteId._id === filtroPaciente;
+      !filtroPaciente ||
+      (cita.pacienteId && cita.pacienteId._id === filtroPaciente);
 
     const cumpleFiltroPagos =
       filtroPagos === "todos" ||
       (filtroPagos === "con-pagos-pendientes" &&
-        cita.pago?.pagos?.some((p) => p.estado === "pendiente")) ||
+        cita.pago?.pagos?.some((p) => p && p.estado === "pendiente")) ||
       (filtroPagos === "sin-pagos" && !cita.pago?.pagos?.length);
 
     return (
@@ -742,6 +910,47 @@ export default function CitasDashboard() {
       cumpleFiltroPagos
     );
   });
+
+  const obtenerCitasPorDiaSemana = (indiceDia) => {
+    return citasFiltradas
+      .filter((cita) => {
+        if (!cita || !cita.pacienteId) return false;
+
+        // ✅ CREAR FECHA CORRECTAMENTE PARA EVITAR PROBLEMAS DE ZONA HORARIA
+        const fechaStr = cita.fecha.includes("T")
+          ? cita.fecha.split("T")[0]
+          : cita.fecha;
+        const [año, mes, dia] = fechaStr.split("-");
+        const fechaCita = new Date(
+          parseInt(año),
+          parseInt(mes) - 1,
+          parseInt(dia)
+        );
+
+        // ✅ MAPEO CORRECTO DE DÍAS:
+        // JavaScript: Domingo=0, Lunes=1, Martes=2, Miércoles=3, Jueves=4, Viernes=5, Sábado=6
+        // Nuestro array: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        // Índices:        [   0   ,    1    ,     2     ,    3    ,     4    ,     5    ,     6   ]
+
+        const diaSemanaJS = fechaCita.getDay(); // 0=Domingo, 1=Lunes, 2=Martes, etc.
+
+        let diaCorrespondiente;
+        if (diaSemanaJS === 0) {
+          // Domingo
+          diaCorrespondiente = 6; // Posición 6 en nuestro array
+        } else {
+          // Lunes=1 -> 0, Martes=2 -> 1, etc.
+          diaCorrespondiente = diaSemanaJS - 1;
+        }
+
+        return diaCorrespondiente === indiceDia;
+      })
+      .sort((a, b) => {
+        const fechaComparacion = a.fecha.localeCompare(b.fecha);
+        if (fechaComparacion !== 0) return fechaComparacion;
+        return a.hora.localeCompare(b.hora);
+      });
+  };
 
   if (cargando) {
     return (
@@ -844,6 +1053,20 @@ export default function CitasDashboard() {
                   <span className='text-lg sm:text-xl'>➕</span>
                   <span>Nueva Cita</span>
                 </button>
+                <button
+                  onClick={() => setVistaCompleta(!vistaCompleta)}
+                  className={`px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 ${
+                    vistaCompleta
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-white text-green-600 border-2 border-green-600 hover:bg-green-50"
+                  }`}
+                >
+                  <span className='text-lg sm:text-xl'>📅</span>
+                  <span>
+                    {vistaCompleta ? "Ocultar" : "Mostrar"} Agenda Semanal (
+                    {citasFiltradas.length})
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -929,6 +1152,218 @@ export default function CitasDashboard() {
         </div>
 
         <EstadisticasPagos citas={citas} />
+
+        {vistaCompleta && (
+          <div className='bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 overflow-hidden'>
+            {/* Header Mejorado */}
+            <div className='bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 sm:p-8'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center space-x-3 sm:space-x-4'>
+                  <div className='bg-white/20 rounded-xl sm:rounded-2xl p-2 sm:p-3'>
+                    <span className='text-lg sm:text-2xl'>📅</span>
+                  </div>
+                  <div>
+                    <h3 className='text-2xl sm:text-3xl font-bold'>
+                      Agenda Semanal Global
+                    </h3>
+                    <p className='text-green-100 mt-1 text-sm sm:text-base'>
+                      Todos los pacientes organizados por día -{" "}
+                      {citasFiltradas.length} citas totales
+                    </p>
+                  </div>
+                </div>
+
+                {/* Estadísticas rápidas */}
+                <div className='text-right'>
+                  <div className='text-3xl sm:text-4xl font-bold'>
+                    {citasFiltradas.length}
+                  </div>
+                  <div className='text-green-100 text-sm'>Total Citas</div>
+                  <div className='text-green-200 text-xs mt-1'>
+                    {
+                      citasFiltradas.filter((c) => c.estado === "Programada")
+                        .length
+                    }{" "}
+                    programadas
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vista Semanal Mejorada */}
+            <div className='p-4 sm:p-8'>
+              {citasFiltradas.length === 0 ? (
+                <div className='text-center py-8 sm:py-12'>
+                  <div className='bg-gray-100 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6'>
+                    <span className='text-2xl sm:text-4xl'>📅</span>
+                  </div>
+                  <h3 className='text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-3'>
+                    Comienza tu agenda semanal
+                  </h3>
+                  <p className='text-gray-500 mb-6 sm:mb-8 text-sm sm:text-lg'>
+                    Agrega citas para cualquier día de la semana y organiza
+                    mejor tu práctica médica.
+                  </p>
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all'
+                  >
+                    ➕ Agregar Primera Cita
+                  </button>
+                </div>
+              ) : (
+                <div className='overflow-x-auto'>
+                  {/* GRID DE DÍAS DE LA SEMANA */}
+                  <div className='grid grid-cols-1 md:grid-cols-7 gap-4 min-w-full'>
+                    {[
+                      "Lunes",
+                      "Martes",
+                      "Miércoles",
+                      "Jueves",
+                      "Viernes",
+                      "Sábado",
+                      "Domingo",
+                    ].map((dia, index) => {
+                      const citasDelDia = obtenerCitasPorDiaSemana(index);
+
+                      return (
+                        <div
+                          key={dia}
+                          className='bg-gray-50 rounded-xl border border-gray-200 min-h-96'
+                        >
+                          {/* HEADER DEL DÍA */}
+                          <div
+                            className={`p-4 rounded-t-xl font-bold text-center text-white ${
+                              index === 5 || index === 6
+                                ? "bg-orange-500" // Fines de semana
+                                : "bg-blue-600" // Días laborales
+                            }`}
+                          >
+                            <h4 className='text-lg'>{dia}</h4>
+                            <span className='text-sm opacity-90'>
+                              {citasDelDia.length} cita
+                              {citasDelDia.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+
+                          {/* CITAS DEL DÍA */}
+                          <div className='p-3 space-y-3 max-h-80 overflow-y-auto'>
+                            {citasDelDia.length === 0 ? (
+                              <div className='text-center py-8 text-gray-500'>
+                                <span className='text-4xl block mb-3'>📋</span>
+                                <p className='text-sm mb-4'>
+                                  Sin citas programadas
+                                </p>
+                                <button
+                                  onClick={() => setShowForm(true)}
+                                  className='bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all transform hover:scale-105'
+                                >
+                                  ➕ Agregar Cita
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                {citasDelDia.map((cita) => (
+                                  <TarjetaCitaSemanal
+                                    key={cita._id}
+                                    cita={cita}
+                                    onEditar={handleEditar}
+                                    onEliminar={handleEliminar}
+                                    onCambiarEstado={handleCambiarEstado}
+                                  />
+                                ))}
+
+                                {/* BOTÓN AGREGAR MÁS */}
+                                <button
+                                  onClick={() => setShowForm(true)}
+                                  className='w-full bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-600 hover:text-blue-600 py-3 rounded-xl text-sm font-medium transition-all'
+                                >
+                                  ➕ Agregar Otra Cita
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* LEYENDA MEJORADA */}
+                  <div className='mt-6 p-4 bg-gray-50 rounded-xl'>
+                    <h5 className='font-bold text-gray-800 mb-3'>
+                      Leyenda y Acciones:
+                    </h5>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm'>
+                      <div className='flex items-center'>
+                        <div className='w-4 h-4 bg-blue-500 rounded mr-2'></div>
+                        <span>Programada</span>
+                      </div>
+                      <div className='flex items-center'>
+                        <div className='w-4 h-4 bg-yellow-500 rounded mr-2'></div>
+                        <span>En curso</span>
+                      </div>
+                      <div className='flex items-center'>
+                        <div className='w-4 h-4 bg-green-500 rounded mr-2'></div>
+                        <span>Completada</span>
+                      </div>
+                      <div className='flex items-center'>
+                        <div className='w-4 h-4 bg-orange-500 rounded mr-2'></div>
+                        <span>Fin de semana</span>
+                      </div>
+                    </div>
+
+                    <div className='mt-3 text-xs text-gray-600 space-y-1'>
+                      <p>
+                        💡 <strong>Click directo:</strong> ✏️ Editar | ✅
+                        Cambiar estado | 🗑️ Eliminar
+                      </p>
+                      <p>
+                        📱 <strong>Responsive:</strong> Se adapta
+                        automáticamente a móvil, tablet y desktop
+                      </p>
+                      <p>
+                        🔄 <strong>Filtros activos:</strong> Usa los filtros
+                        superiores para ver citas específicas
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ACCIONES GLOBALES */}
+                  <div className='mt-6 flex flex-wrap gap-3 justify-center'>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className='bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all flex items-center space-x-2'
+                    >
+                      <span>➕</span>
+                      <span>Nueva Cita</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setFiltroEstado("Todas");
+                        setFiltroFecha("");
+                        setFiltroPaciente("");
+                        setFiltroPagos("todos");
+                      }}
+                      className='bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all flex items-center space-x-2'
+                    >
+                      <span>🔄</span>
+                      <span>Limpiar Filtros</span>
+                    </button>
+
+                    <button
+                      onClick={() => window.print()}
+                      className='bg-blue-100 hover:bg-blue-200 text-blue-700 px-6 py-3 rounded-xl font-semibold transition-all flex items-center space-x-2'
+                    >
+                      <span>🖨️</span>
+                      <span>Imprimir Agenda</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Error Alert */}
         {error && (
           <div className='bg-red-50 border-l-4 border-red-400 text-red-700 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center shadow-lg'>
@@ -978,7 +1413,7 @@ export default function CitasDashboard() {
             </h3>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6'>
             <div>
               <label className='block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3'>
                 Estado de la cita
@@ -1000,7 +1435,6 @@ export default function CitasDashboard() {
                 )}
               </select>
             </div>
-
             <div>
               <label className='block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3'>
                 Fecha específica
@@ -1013,6 +1447,23 @@ export default function CitasDashboard() {
               />
             </div>
 
+            <div>
+              <label className='block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3'>
+                Filtrar por paciente
+              </label>
+              <select
+                value={filtroPaciente}
+                onChange={(e) => setFiltroPaciente(e.target.value)}
+                className='w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 bg-white text-sm sm:text-base'
+              >
+                <option value=''>Todos los pacientes</option>
+                {pacientes.map((paciente) => (
+                  <option key={paciente._id} value={paciente._id}>
+                    {paciente.nombre} {paciente.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className='block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3'>
                 Filtrar por pagos
@@ -1029,7 +1480,6 @@ export default function CitasDashboard() {
                 <option value='sin-pagos'>Sin plan de pagos</option>
               </select>
             </div>
-
             <div className='flex items-end'>
               <button
                 onClick={() => {

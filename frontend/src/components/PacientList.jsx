@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from "react"; // ← AGREGADO useRef y useCallback
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function PacienteList({
@@ -93,6 +93,36 @@ export default function PacienteList({
     });
   }, [pacientes, searchTerm]); // ← Mismo cálculo, pero con useMemo
 
+  // NUEVA: Función para calcular edad desde fecha de nacimiento
+  const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return null;
+
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento);
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const mesActual = hoy.getMonth();
+    const mesNacimiento = nacimiento.getMonth();
+
+    if (
+      mesActual < mesNacimiento ||
+      (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())
+    ) {
+      edad--;
+    }
+
+    return edad;
+  };
+
+  // NUEVA: Función para formatear fecha
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "N/A";
+    return new Date(fecha).toLocaleDateString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   const handleVerCitas = (paciente) => {
     navigate(`/pacientes/${paciente._id}/citas`, { state: { paciente } });
   };
@@ -157,181 +187,202 @@ export default function PacienteList({
     </button>
   );
 
-  // 📱 COMPONENTE TARJETA PARA MÓVILES
-  const PacienteCard = ({ paciente, index }) => (
-    <div
-      className={`bg-white rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 ${
-        index % 2 === 0
-          ? "bg-gradient-to-br from-white to-blue-50"
-          : "bg-gradient-to-br from-white to-teal-50"
-      }`}
-    >
-      {/* Header de la tarjeta */}
-      <div className='flex items-center justify-between mb-4'>
-        <div className='flex items-center'>
-          <div
-            className='w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-teal-400 to-blue-500 
-            rounded-full flex items-center justify-center text-white font-bold text-lg mr-3'
+  // 📱 COMPONENTE TARJETA PARA MÓVILES - ACTUALIZADO
+  const PacienteCard = ({ paciente, index }) => {
+    const edadCalculada = calcularEdad(paciente.fechaNacimiento);
+    const edadMostrar = edadCalculada || paciente.edad;
+
+    return (
+      <div
+        className={`bg-white rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 ${
+          index % 2 === 0
+            ? "bg-gradient-to-br from-white to-blue-50"
+            : "bg-gradient-to-br from-white to-teal-50"
+        }`}
+      >
+        {/* Header de la tarjeta */}
+        <div className='flex items-center justify-between mb-4'>
+          <div className='flex items-center'>
+            <div
+              className='w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-teal-400 to-blue-500 
+              rounded-full flex items-center justify-center text-white font-bold text-lg mr-3'
+            >
+              {paciente.nombre[0]}
+              {paciente.apellido[0]}
+            </div>
+            <div>
+              <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
+                {paciente.apellido}, {paciente.nombre}
+              </h3>
+              <p className='text-sm text-gray-500 flex items-center'>
+                <span className='mr-1'>🆔</span>
+                {paciente.dni}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Información principal en grid */}
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4'>
+          {/* Contacto */}
+          <div className='bg-gray-50 rounded-xl p-3'>
+            <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
+              <span className='mr-1'>📞</span>
+              Contacto
+            </h4>
+            <div className='space-y-1'>
+              <div className='text-sm text-gray-600 flex items-center'>
+                <span className='mr-1'>📱</span>
+                {paciente.telefono || "N/A"}
+              </div>
+              <div className='text-sm text-gray-600 flex items-center'>
+                <span className='mr-1'>✉️</span>
+                <span className='truncate'>{paciente.email || "N/A"}</span>
+              </div>
+              {paciente.direccion && (
+                <div className='text-sm text-gray-600 flex items-center'>
+                  <span className='mr-1'>🏠</span>
+                  <span className='truncate'>{paciente.direccion}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Info Personal - ACTUALIZADA */}
+          <div className='bg-gray-50 rounded-xl p-3'>
+            <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
+              <span className='mr-1'>👤</span>
+              Personal
+            </h4>
+            <div className='space-y-1'>
+              <div className='text-sm text-gray-600 flex items-center'>
+                <span className='mr-1'>⚧</span>
+                {paciente.genero || "N/A"}
+              </div>
+              <div className='text-sm text-gray-600 flex items-center'>
+                <span className='mr-1'>📅</span>
+                {edadMostrar ? `${edadMostrar} años` : "N/A"}
+              </div>
+              {paciente.fechaNacimiento && (
+                <div className='text-sm text-gray-600 flex items-center'>
+                  <span className='mr-1'>🎂</span>
+                  {formatearFecha(paciente.fechaNacimiento)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Información médica expandible - ACTUALIZADA */}
+        <details className='mb-4'>
+          <summary className='cursor-pointer bg-blue-50 rounded-xl p-3 hover:bg-blue-100 transition-colors'>
+            <span className='font-semibold text-gray-700 text-sm flex items-center'>
+              <span className='mr-1'>🏥</span>
+              Información Médica
+              <span className='ml-auto text-xs'>👁️ Ver más</span>
+            </span>
+          </summary>
+          <div className='mt-3 space-y-2 px-3'>
+            <div className='text-sm text-gray-600'>
+              <strong>Alergias:</strong> {paciente.alergias || "Ninguna"}
+            </div>
+            <div className='text-sm text-gray-600'>
+              <strong>Antecedentes Médicos:</strong>{" "}
+              {paciente.antecedentesEnfermedad || "Ninguno"}
+            </div>
+            <div className='text-sm text-gray-600'>
+              <strong>Antecedentes Familiares:</strong>{" "}
+              {paciente.antecedentesFamiliares || "Ninguno"}
+            </div>
+            {/* NUEVO: Alimentación */}
+            <div className='text-sm text-gray-600'>
+              <strong>Alimentación:</strong>{" "}
+              {paciente.alimentacion || "No especificada"}
+            </div>
+          </div>
+        </details>
+
+        {/* Otros datos */}
+        <div className='bg-purple-50 rounded-xl p-3 mb-4'>
+          <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
+            <span className='mr-1'>📋</span>
+            Otros Datos
+          </h4>
+          <div className='grid grid-cols-2 gap-2 text-xs text-gray-600'>
+            <div className='flex items-center'>
+              <span className='mr-1'>😴</span>
+              {paciente.horasSueno || "N/A"}h sueño
+            </div>
+            <div className='flex items-center'>
+              <span className='mr-1'>🏥</span>
+              {paciente.obraSocial ? "Con obra social" : "Sin obra social"}
+            </div>
+            <div className='flex items-center col-span-2'>
+              <span className='mr-1'>🧴</span>
+              {paciente.tipoShampoo || "N/A"}
+            </div>
+          </div>
+        </div>
+
+        {/* Acciones - Layout mejorado para móvil CON TEXTO VISIBLE */}
+        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3'>
+          <ActionButton
+            onClick={() => onEditPaciente(paciente)}
+            className='bg-blue-100 text-blue-700 hover:bg-blue-200'
+            icon='✏️'
+            title='Editar paciente'
           >
-            {paciente.nombre[0]}
-            {paciente.apellido[0]}
-          </div>
-          <div>
-            <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
-              {paciente.apellido}, {paciente.nombre}
-            </h3>
-            <p className='text-sm text-gray-500 flex items-center'>
-              <span className='mr-1'>🆔</span>
-              {paciente.dni}
-            </p>
-          </div>
+            Editar
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => handleVerCitas(paciente)}
+            className='bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+            icon='📅'
+            title='Ver citas del paciente'
+          >
+            Citas
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => handleViewHistory(paciente)}
+            className='bg-green-100 text-green-700 hover:bg-green-200'
+            icon='📋'
+            title='Ver historial clínico'
+          >
+            Historial
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => handleVerSolicitudes(paciente)}
+            className='bg-purple-100 text-purple-700 hover:bg-purple-200'
+            icon='📊'
+            title='Ver solicitudes de análisis'
+          >
+            Análisis
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => handleVerFotos(paciente)}
+            className='bg-pink-100 text-pink-700 hover:bg-pink-200'
+            icon='📸'
+            title='Ver fotos antes y después del tratamiento'
+          >
+            Fotos
+          </ActionButton>
+
+          <ActionButton
+            onClick={() => eliminarPaciente(paciente._id)}
+            className='bg-red-100 text-red-700 hover:bg-red-200'
+            icon='🗑️'
+            title='Eliminar paciente'
+          >
+            Eliminar
+          </ActionButton>
         </div>
       </div>
-
-      {/* Información principal en grid */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4'>
-        {/* Contacto */}
-        <div className='bg-gray-50 rounded-xl p-3'>
-          <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
-            <span className='mr-1'>📞</span>
-            Contacto
-          </h4>
-          <div className='space-y-1'>
-            <div className='text-sm text-gray-600 flex items-center'>
-              <span className='mr-1'>📱</span>
-              {paciente.telefono || "N/A"}
-            </div>
-            <div className='text-sm text-gray-600 flex items-center'>
-              <span className='mr-1'>✉️</span>
-              <span className='truncate'>{paciente.email || "N/A"}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Info Personal */}
-        <div className='bg-gray-50 rounded-xl p-3'>
-          <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
-            <span className='mr-1'>👤</span>
-            Personal
-          </h4>
-          <div className='space-y-1'>
-            <div className='text-sm text-gray-600 flex items-center'>
-              <span className='mr-1'>⚧</span>
-              {paciente.genero || "N/A"}
-            </div>
-            <div className='text-sm text-gray-600 flex items-center'>
-              <span className='mr-1'>📅</span>
-              {paciente.edad || "N/A"} años
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Información médica expandible */}
-      <details className='mb-4'>
-        <summary className='cursor-pointer bg-blue-50 rounded-xl p-3 hover:bg-blue-100 transition-colors'>
-          <span className='font-semibold text-gray-700 text-sm flex items-center'>
-            <span className='mr-1'>🏥</span>
-            Información Médica
-            <span className='ml-auto text-xs'>👁️ Ver más</span>
-          </span>
-        </summary>
-        <div className='mt-3 space-y-2 px-3'>
-          <div className='text-sm text-gray-600'>
-            <strong>Alergias:</strong> {paciente.alergias || "Ninguna"}
-          </div>
-          <div className='text-sm text-gray-600'>
-            <strong>Antecedentes Médicos:</strong>{" "}
-            {paciente.antecedentesEnfermedad || "Ninguno"}
-          </div>
-          <div className='text-sm text-gray-600'>
-            <strong>Antecedentes Familiares:</strong>{" "}
-            {paciente.antecedentesFamiliares || "Ninguno"}
-          </div>
-        </div>
-      </details>
-
-      {/* Otros datos */}
-      <div className='bg-purple-50 rounded-xl p-3 mb-4'>
-        <h4 className='font-semibold text-gray-700 text-sm mb-2 flex items-center'>
-          <span className='mr-1'>📋</span>
-          Otros Datos
-        </h4>
-        <div className='grid grid-cols-2 gap-2 text-xs text-gray-600'>
-          <div className='flex items-center'>
-            <span className='mr-1'>😴</span>
-            {paciente.horasSueno || "N/A"}h sueño
-          </div>
-          <div className='flex items-center'>
-            <span className='mr-1'>🏥</span>
-            {paciente.obraSocial ? "Con obra social" : "Sin obra social"}
-          </div>
-          <div className='flex items-center col-span-2'>
-            <span className='mr-1'>🧴</span>
-            {paciente.tipoShampoo || "N/A"}
-          </div>
-        </div>
-      </div>
-
-      {/* Acciones - Layout mejorado para móvil */}
-      {/* Acciones - Layout mejorado para móvil CON TEXTO VISIBLE */}
-      <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3'>
-        <ActionButton
-          onClick={() => onEditPaciente(paciente)}
-          className='bg-blue-100 text-blue-700 hover:bg-blue-200'
-          icon='✏️'
-          title='Editar paciente'
-        >
-          Editar
-        </ActionButton>
-
-        <ActionButton
-          onClick={() => handleVerCitas(paciente)}
-          className='bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-          icon='📅'
-          title='Ver citas del paciente'
-        >
-          Citas
-        </ActionButton>
-
-        <ActionButton
-          onClick={() => handleViewHistory(paciente)}
-          className='bg-green-100 text-green-700 hover:bg-green-200'
-          icon='📋'
-          title='Ver historial clínico'
-        >
-          Historial
-        </ActionButton>
-
-        <ActionButton
-          onClick={() => handleVerSolicitudes(paciente)}
-          className='bg-purple-100 text-purple-700 hover:bg-purple-200'
-          icon='📊'
-          title='Ver solicitudes de análisis'
-        >
-          Análisis
-        </ActionButton>
-
-        <ActionButton
-          onClick={() => handleVerFotos(paciente)}
-          className='bg-pink-100 text-pink-700 hover:bg-pink-200'
-          icon='📸'
-          title='Ver fotos antes y después del tratamiento'
-        >
-          Fotos
-        </ActionButton>
-
-        <ActionButton
-          onClick={() => eliminarPaciente(paciente._id)}
-          className='bg-red-100 text-red-700 hover:bg-red-200'
-          icon='🗑️'
-          title='Eliminar paciente'
-        >
-          Eliminar
-        </ActionButton>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4 sm:p-6'>
@@ -486,7 +537,7 @@ export default function PacienteList({
               </div>
             )}
 
-            {/* Vista Tabla - Solo desktop */}
+            {/* Vista Tabla - Solo desktop - ACTUALIZADA */}
             {vistaTabla && (
               <div className='hidden lg:block bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-white/20'>
                 <div className='overflow-x-auto'>
@@ -514,170 +565,199 @@ export default function PacienteList({
                       </tr>
                     </thead>
                     <tbody className='divide-y divide-gray-200'>
-                      {filteredPacientes.map((paciente, index) => (
-                        <tr
-                          key={paciente._id}
-                          className={`hover:bg-gray-50 transition-colors duration-200 ${
-                            index % 2 === 0 ? "bg-white" : "bg-gray-25"
-                          }`}
-                        >
-                          {/* Paciente */}
-                          <td className='px-6 py-4'>
-                            <div className='flex items-center'>
-                              <div
-                                className='w-10 h-10 bg-gradient-to-r from-teal-400 to-blue-500 
-                                rounded-full flex items-center justify-center text-white font-bold text-sm mr-3'
-                              >
-                                {paciente.nombre[0]}
-                                {paciente.apellido[0]}
+                      {filteredPacientes.map((paciente, index) => {
+                        const edadCalculada = calcularEdad(
+                          paciente.fechaNacimiento
+                        );
+                        const edadMostrar = edadCalculada || paciente.edad;
+
+                        return (
+                          <tr
+                            key={paciente._id}
+                            className={`hover:bg-gray-50 transition-colors duration-200 ${
+                              index % 2 === 0 ? "bg-white" : "bg-gray-25"
+                            }`}
+                          >
+                            {/* Paciente */}
+                            <td className='px-6 py-4'>
+                              <div className='flex items-center'>
+                                <div
+                                  className='w-10 h-10 bg-gradient-to-r from-teal-400 to-blue-500 
+                                  rounded-full flex items-center justify-center text-white font-bold text-sm mr-3'
+                                >
+                                  {paciente.nombre[0]}
+                                  {paciente.apellido[0]}
+                                </div>
+                                <div>
+                                  <div className='text-sm font-medium text-gray-900'>
+                                    {paciente.apellido}, {paciente.nombre}
+                                  </div>
+                                  <div className='text-sm text-gray-500 flex items-center'>
+                                    <span className='mr-1'>🆔</span>
+                                    {paciente.dni}
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <div className='text-sm font-medium text-gray-900'>
-                                  {paciente.apellido}, {paciente.nombre}
+                            </td>
+
+                            {/* Contacto - ACTUALIZADO */}
+                            <td className='px-6 py-4'>
+                              <div className='space-y-1'>
+                                <div className='text-sm text-gray-900 flex items-center'>
+                                  <span className='mr-1'>📱</span>
+                                  {paciente.telefono || "N/A"}
                                 </div>
                                 <div className='text-sm text-gray-500 flex items-center'>
-                                  <span className='mr-1'>🆔</span>
-                                  {paciente.dni}
+                                  <span className='mr-1'>✉️</span>
+                                  {paciente.email || "N/A"}
+                                </div>
+                                {paciente.direccion && (
+                                  <div className='text-sm text-gray-500 flex items-center'>
+                                    <span className='mr-1'>🏠</span>
+                                    <span className='truncate max-w-32'>
+                                      {paciente.direccion}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Info Personal - ACTUALIZADA */}
+                            <td className='px-6 py-4'>
+                              <div className='space-y-1'>
+                                <div className='text-sm text-gray-900 flex items-center'>
+                                  <span className='mr-1'>⚧</span>
+                                  {paciente.genero || "N/A"}
+                                </div>
+                                <div className='text-sm text-gray-500 flex items-center'>
+                                  <span className='mr-1'>📅</span>
+                                  {edadMostrar ? `${edadMostrar} años` : "N/A"}
+                                </div>
+                                {paciente.fechaNacimiento && (
+                                  <div className='text-sm text-gray-500 flex items-center'>
+                                    <span className='mr-1'>🎂</span>
+                                    {formatearFecha(paciente.fechaNacimiento)}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Info Médica - ACTUALIZADA */}
+                            <td className='px-6 py-4'>
+                              <div className='space-y-1 max-w-xs'>
+                                <div className='text-xs text-gray-600'>
+                                  <strong>Alergias:</strong>{" "}
+                                  {paciente.alergias || "Ninguna"}
+                                </div>
+                                <div className='text-xs text-gray-600'>
+                                  <strong>Ant. Médicos:</strong>{" "}
+                                  {paciente.antecedentesEnfermedad
+                                    ? paciente.antecedentesEnfermedad.substring(
+                                        0,
+                                        30
+                                      ) + "..."
+                                    : "Ninguno"}
+                                </div>
+                                <div className='text-xs text-gray-600'>
+                                  <strong>Ant. Familiares:</strong>{" "}
+                                  {paciente.antecedentesFamiliares
+                                    ? paciente.antecedentesFamiliares.substring(
+                                        0,
+                                        30
+                                      ) + "..."
+                                    : "Ninguno"}
+                                </div>
+                                {/* NUEVO: Alimentación */}
+                                <div className='text-xs text-gray-600'>
+                                  <strong>Alimentación:</strong>{" "}
+                                  {paciente.alimentacion
+                                    ? paciente.alimentacion.substring(0, 25) +
+                                      "..."
+                                    : "No especificada"}
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Contacto */}
-                          <td className='px-6 py-4'>
-                            <div className='space-y-1'>
-                              <div className='text-sm text-gray-900 flex items-center'>
-                                <span className='mr-1'>📱</span>
-                                {paciente.telefono || "N/A"}
+                            {/* Otros Datos */}
+                            <td className='px-6 py-4'>
+                              <div className='space-y-1'>
+                                <div className='text-xs text-gray-600 flex items-center'>
+                                  <span className='mr-1'>😴</span>
+                                  {paciente.horasSueno || "N/A"}h sueño
+                                </div>
+                                <div className='text-xs text-gray-600 flex items-center'>
+                                  <span className='mr-1'>🏥</span>
+                                  {paciente.obraSocial || "Sin obra social"}
+                                </div>
+                                <div className='text-xs text-gray-600 flex items-center'>
+                                  <span className='mr-1'>🧴</span>
+                                  {paciente.tipoShampoo || "N/A"}
+                                </div>
                               </div>
-                              <div className='text-sm text-gray-500 flex items-center'>
-                                <span className='mr-1'>✉️</span>
-                                {paciente.email || "N/A"}
-                              </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Info Personal */}
-                          <td className='px-6 py-4'>
-                            <div className='space-y-1'>
-                              <div className='text-sm text-gray-900 flex items-center'>
-                                <span className='mr-1'>⚧</span>
-                                {paciente.genero || "N/A"}
-                              </div>
-                              <div className='text-sm text-gray-500 flex items-center'>
-                                <span className='mr-1'>📅</span>
-                                {paciente.edad || "N/A"} años
-                              </div>
-                            </div>
-                          </td>
+                            {/* Acciones */}
+                            <td className='px-6 py-4'>
+                              <div className='flex flex-wrap gap-2'>
+                                <ActionButton
+                                  onClick={() => onEditPaciente(paciente)}
+                                  className='bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                  icon='✏️'
+                                  title='Editar paciente'
+                                >
+                                  Editar
+                                </ActionButton>
 
-                          {/* Info Médica */}
-                          <td className='px-6 py-4'>
-                            <div className='space-y-1 max-w-xs'>
-                              <div className='text-xs text-gray-600'>
-                                <strong>Alergias:</strong>{" "}
-                                {paciente.alergias || "Ninguna"}
+                                <ActionButton
+                                  onClick={() => handleVerCitas(paciente)}
+                                  className='bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                  icon='📅'
+                                  title='Ver citas del paciente'
+                                >
+                                  Citas
+                                </ActionButton>
+
+                                <ActionButton
+                                  onClick={() => handleViewHistory(paciente)}
+                                  className='bg-green-100 text-green-700 hover:bg-green-200'
+                                  icon='📋'
+                                  title='Ver historial clínico'
+                                >
+                                  Historial
+                                </ActionButton>
+
+                                <ActionButton
+                                  onClick={() => handleVerSolicitudes(paciente)}
+                                  className='bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                  icon='📊'
+                                  title='Ver solicitudes de análisis'
+                                >
+                                  Solicitudes
+                                </ActionButton>
+
+                                {/* BOTÓN DE FOTOS ANTES/DESPUÉS */}
+                                <ActionButton
+                                  onClick={() => handleVerFotos(paciente)}
+                                  className='bg-pink-100 text-pink-700 hover:bg-pink-200'
+                                  icon='📸'
+                                  title='Ver fotos antes y después del tratamiento'
+                                >
+                                  Fotos
+                                </ActionButton>
+
+                                <ActionButton
+                                  onClick={() => eliminarPaciente(paciente._id)}
+                                  className='bg-red-100 text-red-700 hover:bg-red-200'
+                                  icon='🗑️'
+                                  title='Eliminar paciente'
+                                >
+                                  Eliminar
+                                </ActionButton>
                               </div>
-                              <div className='text-xs text-gray-600'>
-                                <strong>Ant. Médicos:</strong>{" "}
-                                {paciente.antecedentesEnfermedad
-                                  ? paciente.antecedentesEnfermedad.substring(
-                                      0,
-                                      30
-                                    ) + "..."
-                                  : "Ninguno"}
-                              </div>
-                              <div className='text-xs text-gray-600'>
-                                <strong>Ant. Familiares:</strong>{" "}
-                                {paciente.antecedentesFamiliares
-                                  ? paciente.antecedentesFamiliares.substring(
-                                      0,
-                                      30
-                                    ) + "..."
-                                  : "Ninguno"}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Otros Datos */}
-                          <td className='px-6 py-4'>
-                            <div className='space-y-1'>
-                              <div className='text-xs text-gray-600 flex items-center'>
-                                <span className='mr-1'>😴</span>
-                                {paciente.horasSueno || "N/A"}h sueño
-                              </div>
-                              <div className='text-xs text-gray-600 flex items-center'>
-                                <span className='mr-1'>🏥</span>
-                                {paciente.obraSocial || "Sin obra social"}
-                              </div>
-                              <div className='text-xs text-gray-600 flex items-center'>
-                                <span className='mr-1'>🧴</span>
-                                {paciente.tipoShampoo || "N/A"}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Acciones */}
-                          <td className='px-6 py-4'>
-                            <div className='flex flex-wrap gap-2'>
-                              <ActionButton
-                                onClick={() => onEditPaciente(paciente)}
-                                className='bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                icon='✏️'
-                                title='Editar paciente'
-                              >
-                                Editar
-                              </ActionButton>
-
-                              <ActionButton
-                                onClick={() => handleVerCitas(paciente)}
-                                className='bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                                icon='📅'
-                                title='Ver citas del paciente'
-                              >
-                                Citas
-                              </ActionButton>
-
-                              <ActionButton
-                                onClick={() => handleViewHistory(paciente)}
-                                className='bg-green-100 text-green-700 hover:bg-green-200'
-                                icon='📋'
-                                title='Ver historial clínico'
-                              >
-                                Historial
-                              </ActionButton>
-
-                              <ActionButton
-                                onClick={() => handleVerSolicitudes(paciente)}
-                                className='bg-purple-100 text-purple-700 hover:bg-purple-200'
-                                icon='📊'
-                                title='Ver solicitudes de análisis'
-                              >
-                                Solicitudes
-                              </ActionButton>
-
-                              {/* BOTÓN DE FOTOS ANTES/DESPUÉS */}
-                              <ActionButton
-                                onClick={() => handleVerFotos(paciente)}
-                                className='bg-pink-100 text-pink-700 hover:bg-pink-200'
-                                icon='📸'
-                                title='Ver fotos antes y después del tratamiento'
-                              >
-                                Fotos
-                              </ActionButton>
-
-                              <ActionButton
-                                onClick={() => eliminarPaciente(paciente._id)}
-                                className='bg-red-100 text-red-700 hover:bg-red-200'
-                                icon='🗑️'
-                                title='Eliminar paciente'
-                              >
-                                Eliminar
-                              </ActionButton>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

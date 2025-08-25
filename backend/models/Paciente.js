@@ -16,6 +16,7 @@ const pacienteSchema = new mongoose.Schema({
   horasSueno: { type: Number }, // Campo existente
   obraSocial: { type: String }, // Campo existente
   tipoShampoo: { type: String }, // Campo existente
+  alimentacion: { type: String }, // NUEVO CAMPO agregado
   creadoEn: { type: Date, default: Date.now },
 });
 
