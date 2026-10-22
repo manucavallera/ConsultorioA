@@ -1,6 +1,28 @@
 import Paciente from "../models/Paciente.js";
 import HistorialClinico from "../models/HistorialClinico.js"; // ← AGREGAR ESTA IMPORTACIÓN
 import mongoose from "mongoose"; // ← AGREGAR ESTA IMPORTACIÓN
+
+// Arma un mensaje legible para mostrar en el formulario.
+// El frontend muestra el campo "message" de la respuesta.
+const respuestaError = (error, mensaje) => {
+  if (error?.code === 11000 && error?.keyValue?.dni) {
+    return {
+      status: 409,
+      body: {
+        mensaje,
+        message: `Ya existe un paciente con DNI ${error.keyValue.dni}. Buscalo en la lista de pacientes.`,
+      },
+    };
+  }
+  if (error?.name === "ValidationError") {
+    const faltantes = Object.keys(error.errors || {}).join(", ");
+    return {
+      status: 400,
+      body: { mensaje, message: `Datos inválidos: ${faltantes}` },
+    };
+  }
+  return { status: 400, body: { mensaje, message: error?.message || mensaje } };
+};
 // Crear un nuevo paciente
 export const crearPaciente = async (req, res) => {
   try {
@@ -8,7 +30,8 @@ export const crearPaciente = async (req, res) => {
     const guardado = await nuevoPaciente.save();
     res.status(201).json(guardado);
   } catch (error) {
-    res.status(400).json({ mensaje: "Error al crear paciente", error });
+    const { status, body } = respuestaError(error, "Error al crear paciente");
+    res.status(status).json(body);
   }
 };
 
@@ -46,7 +69,8 @@ export const actualizarPaciente = async (req, res) => {
       return res.status(404).json({ mensaje: "Paciente no encontrado" });
     res.json(actualizado);
   } catch (error) {
-    res.status(400).json({ mensaje: "Error al actualizar paciente", error });
+    const { status, body } = respuestaError(error, "Error al actualizar paciente");
+    res.status(status).json(body);
   }
 };
 
@@ -93,10 +117,11 @@ export const crearPacienteConHistorial = async (req, res) => {
   } catch (error) {
     // Revertir en caso de error
     await session.abortTransaction();
-    res.status(400).json({
-      mensaje: "Error al crear paciente con historial",
-      error: error.message,
-    });
+    const { status, body } = respuestaError(
+      error,
+      "Error al crear paciente con historial"
+    );
+    res.status(status).json(body);
   } finally {
     session.endSession();
   }
