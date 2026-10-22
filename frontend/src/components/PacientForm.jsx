@@ -38,6 +38,26 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+  // El servidor (Render gratis) se duerme tras 15 minutos sin uso y tarda
+  // ~1 minuto en despertar. Mientras el formulario está abierto lo mantenemos
+  // despierto, y lo despertamos al volver a la pestaña.
+  useEffect(() => {
+    const despertar = () => fetch(`${API_URL}/health`).catch(() => {});
+    const alVolver = () => {
+      if (document.visibilityState === "visible") despertar();
+    };
+    despertar();
+    const intervalo = setInterval(despertar, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", alVolver);
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", alVolver);
+    };
+  }, [API_URL]);
+
+  const MENSAJE_SERVIDOR_INICIANDO =
+    "El servidor se está iniciando. Esperá unos segundos y tocá Guardar de nuevo (no hace falta volver a cargar los datos).";
+
   useEffect(() => {
     if (pacienteEditando) {
       setFormData({
@@ -254,7 +274,9 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
 
       // ✅ MANEJO DETALLADO DE ERRORES
       if (!res.ok) {
-        let errorMessage = `Error ${res.status}: ${res.statusText}`;
+        let errorMessage = [502, 503, 504].includes(res.status)
+          ? MENSAJE_SERVIDOR_INICIANDO
+          : `Error ${res.status}: ${res.statusText}`;
 
         try {
           const errorData = await res.json();
@@ -320,7 +342,12 @@ export default function PacienteForm({ onPacienteSubmit, pacienteEditando }) {
       }
     } catch (err) {
       console.error("⌐ Error completo:", err);
-      alert(`Error al guardar el paciente: ${err.message}`);
+      // fetch falla sin respuesta cuando el servidor todavía no despertó
+      alert(
+        err instanceof TypeError
+          ? MENSAJE_SERVIDOR_INICIANDO
+          : `Error al guardar el paciente: ${err.message}`
+      );
     } finally {
       setIsSubmitting(false);
     }
